@@ -1,0 +1,27 @@
+{
+  "name": "wflow",
+  "version": "0.1.0",
+  "description": "Command-line tool to supplement the wflow Claude plugin.",
+  "main": "dist/index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavideBigano/wflow.git"
+  },
+  "keywords": [
+    "workflow",
+    "icm",
+    "interpretable-context-methodology",
+    "workspace",
+    "ai",
+    "tool"
+  ],
+  "author": "Davide Bigano",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/DavideBigano/wflow/issues"
+  },
+  "homepage": "https://github.com/DavideBigano/wflow#readme"
+}
