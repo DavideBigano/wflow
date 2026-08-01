@@ -1,0 +1,8 @@
+{
+  "bundleRoot": "./knowledge",
+  "directoryMd": true,
+  "fullIndexPosition": "bundleRoot",
+  "linkFormat": "fileRelative",
+  "logging": "none",
+  "requiredProperties": ["title", "description", "categories"]
+}
