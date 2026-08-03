@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TopicTabs renders with the archiver tab active 1`] = `
+"  Home    ‹ Archiver ›  (←/→ switch tabs)
+"
+`;
+
+exports[`TopicTabs renders with the home tab active 1`] = `
+"‹ Home ›    Archiver    (←/→ switch tabs)
+"
+`;

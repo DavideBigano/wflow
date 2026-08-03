@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ArchiverTopic renders an active run alongside stashed runs 1`] = `
+"┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ › Running: run-active                                                                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  run-a
+  run-b
+  [refresh]
+
+↑/↓ select · enter confirm · r refresh"
+`;
+
+exports[`ArchiverTopic renders the empty state 1`] = `
+"┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│   Running: none                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+no archived runs
+› [refresh]
+
+↑/↓ select · enter confirm · r refresh"
+`;
