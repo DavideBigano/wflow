@@ -1,9 +1,9 @@
 import { render } from 'ink-testing-library';
 import { expect, test, vi } from 'vitest';
-import { findRunningId, listStashedRuns } from '../../lib/runArchive.js';
+import { findRunningId, listStashedRuns } from '../../../lib/runArchive.js';
 import { ArchiverTopic } from './ArchiverTopic.js';
 
-vi.mock('../../lib/runArchive.js', () => ({
+vi.mock('../../../lib/runArchive.js', () => ({
     findRunningId: vi.fn(),
     listStashedRuns: vi.fn(),
     stashRunningRun: vi.fn(),

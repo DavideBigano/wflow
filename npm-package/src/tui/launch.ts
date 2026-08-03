@@ -1,7 +1,7 @@
 import { render } from 'ink';
 import React from 'react';
 import { WflowError } from '../lib/wflowError.js';
-import { Shell } from './Shell.js';
+import { Shell } from './components/Shell/Shell.js';
 import type { TopicId } from './topicRegistry.js';
 
 export interface LaunchOptions {

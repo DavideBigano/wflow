@@ -5,9 +5,9 @@ import {
     listStashedRuns,
     reviveRun,
     stashRunningRun,
-} from '../../lib/runArchive.js';
-import { describeError } from '../../lib/wflowError.js';
-import { ConfirmPrompt } from './ConfirmPrompt.js';
+} from '../../../lib/runArchive.js';
+import { describeError } from '../../../lib/wflowError.js';
+import { ConfirmPrompt } from '../../elements/ConfirmPrompt/ConfirmPrompt.js';
 
 type ArchiverRow =
     | { kind: 'active'; runId: string }
