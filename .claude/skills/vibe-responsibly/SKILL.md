@@ -1,6 +1,6 @@
 ---
 name: vibe-responsibly
-description: Coding conventions to apply when implementing a spec or request for a piece of code/software. Applies testability/pure-function/naming/JSDoc conventions, TypeScript/npm/Vite/Vitest project setup, build output layout, and three-tier test conventions. Invoke explicitly via /vibe-responsibly when handing off a spec — not auto-triggered.
+description: Coding conventions to apply when implementing a spec or request for a piece of code/software. Applies testability/pure-function/naming/JSDoc conventions, TypeScript/npm/Vite/Vitest project setup, build output layout, and four-tier test conventions (unit/integration/e2e/screenshot). Invoke explicitly via /vibe-responsibly when handing off a spec — not auto-triggered.
 user-invocable: true
 skillmancy-version: "0.2.0"
 ---
@@ -71,3 +71,7 @@ TypeScript, set up as an npm project. Vite builds the project; Vitest runs the t
 **One assertion per test** — Unless one assertion is a precondition for another (e.g. an `isDefined` guard before the assertion that depends on it), keep each test to a single assertion.
 
 **Cover both directions** — Test both for the expected output, and for the regressions you want to guard against.
+
+**Behavior vs graphical concerns** — For UI code, split what's tested by kind, not by file-under-test: behavior (state transitions, handlers, logic) belongs in classic unit tests (`file.test.ts`); anything graphical (position, presence, correctness of rendered text) belongs in screenshot/snapshot tests (`file.screenshot.test.ts`). Don't assert layout or rendered text inside a `file.test.ts`, and don't assert behavior inside a `file.screenshot.test.ts`.
+
+**`file.screenshot.test.ts`** — Fourth colocated tier, alongside unit/integration/e2e, covering both literal screenshots and text/frame snapshots (e.g. `lastFrame()` from `ink-testing-library`). Same colocation rule as the other tiers.
