@@ -1,7 +1,7 @@
 {
-  "enabledPlugins": {
-    "git-helpers@personal-claude-marketplace": true,
-    "okf-wiki@personal-claude-marketplace": true,
-    "skillmancy@personal-claude-marketplace": true
-  }
+    "enabledPlugins": {
+        "git-helpers@personal-claude-marketplace": true,
+        "okf-wiki@personal-claude-marketplace": true,
+        "skillmancy@personal-claude-marketplace": true
+    }
 }
