@@ -1,5 +1,5 @@
 import { Box, Text, useInput } from 'ink';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     findRunningId,
     listStashedRuns,

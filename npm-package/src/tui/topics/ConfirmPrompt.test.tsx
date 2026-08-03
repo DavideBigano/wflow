@@ -1,5 +1,4 @@
 import { render } from 'ink-testing-library';
-import React from 'react';
 import { expect, test } from 'vitest';
 import { ConfirmPrompt } from './ConfirmPrompt.js';
 

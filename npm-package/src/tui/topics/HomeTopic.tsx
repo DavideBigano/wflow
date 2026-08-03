@@ -1,5 +1,4 @@
 import { Box, Text } from 'ink';
-import React from 'react';
 
 /** Dumb, reusable element: placeholder landing tab, no state, no behavior yet. */
 export function HomeTopic() {
