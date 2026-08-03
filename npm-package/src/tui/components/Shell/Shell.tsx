@@ -1,9 +1,9 @@
 import { Box, useApp, useInput } from 'ink';
 import { useCallback, useState } from 'react';
-import { TopicTabs } from './TopicTabs.js';
-import { TOPICS, type TopicId } from './topicRegistry.js';
-import { ArchiverTopic } from './topics/ArchiverTopic.js';
-import { HomeTopic } from './topics/HomeTopic.js';
+import { TOPICS, type TopicId } from '../../topicRegistry.js';
+import { TopicTabs } from '../../elements/TopicTabs/TopicTabs.js';
+import { ArchiverTopic } from '../ArchiverTopic/ArchiverTopic.js';
+import { HomeTopic } from '../HomeTopic/HomeTopic.js';
 
 export interface ShellProps {
     workspaceRoot: string;

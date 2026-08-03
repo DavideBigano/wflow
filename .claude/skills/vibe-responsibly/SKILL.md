@@ -56,11 +56,30 @@ TypeScript, set up as an npm project. Vite builds the project; Vitest runs the t
 
 **CSS Modules** — Style components with CSS Modules.
 
-**Same conventions apply, except naming** — Treat a component like any other function: testability/mockability, purity where possible, JSDoc over comments, modern idioms — all apply. The one exception is naming: components use PascalCase (matching JSX convention), not the `get`/`create` prefix vocabulary.
+**Same conventions apply, except naming** — Treat a component like any other function: testability/mockability, purity where possible, JSDoc over comments, modern idioms. All apply except naming: use PascalCase; no `get`/`create` prefixes.
 
-**Elements vs components** — Two tiers, decide which one each piece of UI is before building it:
-- **Elements** — dumb, reusable. Small state, generally injected via props rather than owned.
-- **Components** — smart, bespoke. Bigger state, a mix of self-contained (internal) and injected state.
+**Elements vs components** — Two tiers, decide which one each piece of UI is before building it. The main driver is reuse, not size or state — a stub with no state or behavior is still a component if it's bespoke to one place (e.g. a placeholder tab screen), not an element just because it's simple:
+- **Elements** — reused across the app. Small state, generally injected via props rather than owned.
+- **Components** — bespoke, used in one place. Bigger state, a mix of self-contained (internal) and injected state.
+
+**Folder layout** — Two top-level folders, `components/` and `elements/`, one per tier. Inside each, one folder per component/element named after it (PascalCase), colocating the component with all of its tests (see Testing conventions) and its `__snapshots__/`/`__screenshots__` directory (depending on the library used):
+```
+components/
+    Component/
+        Component.tsx
+        Component.screenshot.test.tsx
+        Component.test.tsx
+        __snapshots__/ (or __screenshots__/)
+            ...
+elements/
+    Element/
+        Element.tsx
+        Element.screenshot.test.tsx
+        Element.test.tsx
+        Component.test.tsx
+        __snapshots__/ (or __screenshots__/)
+            ...
+```
 
 ### Testing conventions
 

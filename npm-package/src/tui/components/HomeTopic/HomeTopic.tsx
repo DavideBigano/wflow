@@ -1,6 +1,6 @@
 import { Box, Text } from 'ink';
 
-/** Dumb, reusable element: placeholder landing tab, no state, no behavior yet. */
+/** Bespoke component: placeholder landing tab, not reused elsewhere, no state or behavior yet. */
 export function HomeTopic() {
     return (
         <Box flexDirection="column">
