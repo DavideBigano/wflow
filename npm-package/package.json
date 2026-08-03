@@ -1,47 +1,50 @@
 {
-  "name": "wflow",
-  "version": "0.1.0",
-  "description": "Command-line tool to supplement the wflow Claude plugin.",
-  "type": "module",
-  "bin": {
-    "wflow": "dist/cli.mjs"
-  },
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "npm run typecheck && vite build && chmod +x dist/cli.mjs",
-    "start": "node dist/cli.mjs",
-    "test": "vitest run"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DavideBigano/wflow.git"
-  },
-  "keywords": [
-    "workflow",
-    "icm",
-    "interpretable-context-methodology",
-    "workspace",
-    "ai",
-    "tool"
-  ],
-  "author": "Davide Bigano",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/DavideBigano/wflow/issues"
-  },
-  "homepage": "https://github.com/DavideBigano/wflow#readme",
-  "dependencies": {
-    "ink": "^5.0.1",
-    "react": "^18.3.1",
-    "yargs": "^17.7.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^18.3.18",
-    "@types/yargs": "^17.0.33",
-    "ink-testing-library": "^4.0.0",
-    "typescript": "^7.0.2",
-    "vite": "^6.0.7",
-    "vitest": "^2.1.8"
-  }
+    "name": "wflow",
+    "version": "0.1.0",
+    "description": "Command-line tool to supplement the wflow Claude plugin.",
+    "type": "module",
+    "bin": {
+        "wflow": "dist/cli.mjs"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "lint": "biome lint --write .",
+        "format": "biome format --write .",
+        "build": "npm run lint && npm run format && npm run typecheck && vite build && chmod +x dist/cli.mjs",
+        "start": "node dist/cli.mjs",
+        "test": "vitest run"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DavideBigano/wflow.git"
+    },
+    "keywords": [
+        "workflow",
+        "icm",
+        "interpretable-context-methodology",
+        "workspace",
+        "ai",
+        "tool"
+    ],
+    "author": "Davide Bigano",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/DavideBigano/wflow/issues"
+    },
+    "homepage": "https://github.com/DavideBigano/wflow#readme",
+    "dependencies": {
+        "ink": "^5.0.1",
+        "react": "^18.3.1",
+        "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.5.6",
+        "@types/node": "^22.10.2",
+        "@types/react": "^18.3.18",
+        "@types/yargs": "^17.0.33",
+        "ink-testing-library": "^4.0.0",
+        "typescript": "^7.0.2",
+        "vite": "^6.0.7",
+        "vitest": "^2.1.8"
+    }
 }
