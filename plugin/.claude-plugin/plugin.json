@@ -1,8 +1,8 @@
 {
-	"name": "wflow",
-	"description": "Skills and tools for managing an ICM inspired workflow.",
-	"version": "0.1.0",
-	"author": {
-		"name": "Davide Bigano"
-	}
+    "name": "wflow",
+    "description": "Skills and tools for managing an ICM inspired workflow.",
+    "version": "0.1.0",
+    "author": {
+        "name": "Davide Bigano"
+    }
 }
