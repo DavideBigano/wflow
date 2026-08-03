@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConfirmPrompt renders with No highlighted 1`] = `
+"╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Archive it?                                                                                      │
+│ Yes   [No]                                                                                       │
+│ ←/→ or y/n to choose · enter to confirm · esc to cancel                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;
+
+exports[`ConfirmPrompt renders with Yes highlighted 1`] = `
+"╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Archive it?                                                                                      │
+│ [Yes]   No                                                                                       │
+│ ←/→ or y/n to choose · enter to confirm · esc to cancel                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;

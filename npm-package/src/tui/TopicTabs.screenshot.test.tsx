@@ -8,18 +8,16 @@ const topics: Topic[] = [
     { id: 'archiver', label: 'Archiver' },
 ];
 
-test('TopicTabs highlights the active tab with angle brackets', () => {
+test('TopicTabs renders with the archiver tab active', () => {
     const { lastFrame } = render(
         <TopicTabs topics={topics} activeId="archiver" />,
     );
 
-    expect(lastFrame()).toContain('‹ Archiver ›');
+    expect(lastFrame()).toMatchSnapshot();
 });
 
-test('TopicTabs renders an inactive tab in plain form', () => {
-    const { lastFrame } = render(
-        <TopicTabs topics={topics} activeId="archiver" />,
-    );
+test('TopicTabs renders with the home tab active', () => {
+    const { lastFrame } = render(<TopicTabs topics={topics} activeId="home" />);
 
-    expect(lastFrame()).not.toContain('‹ Home ›');
+    expect(lastFrame()).toMatchSnapshot();
 });
