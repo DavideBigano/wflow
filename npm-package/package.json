@@ -2,9 +2,15 @@
   "name": "wflow",
   "version": "0.1.0",
   "description": "Command-line tool to supplement the wflow Claude plugin.",
-  "main": "dist/index.mjs",
+  "type": "module",
+  "bin": {
+    "wflow": "dist/cli.mjs"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build && chmod +x dist/cli.mjs",
+    "start": "node dist/cli.mjs",
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -23,5 +29,19 @@
   "bugs": {
     "url": "https://github.com/DavideBigano/wflow/issues"
   },
-  "homepage": "https://github.com/DavideBigano/wflow#readme"
+  "homepage": "https://github.com/DavideBigano/wflow#readme",
+  "dependencies": {
+    "ink": "^5.0.1",
+    "react": "^18.3.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/yargs": "^17.0.33",
+    "ink-testing-library": "^4.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
 }
