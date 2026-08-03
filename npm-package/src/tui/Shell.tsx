@@ -1,5 +1,5 @@
 import { Box, useApp, useInput } from 'ink';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { TopicTabs } from './TopicTabs.js';
 import { TOPICS, type TopicId } from './topicRegistry.js';
 import { ArchiverTopic } from './topics/ArchiverTopic.js';

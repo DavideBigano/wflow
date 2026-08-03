@@ -1,5 +1,4 @@
 import { render } from 'ink-testing-library';
-import React from 'react';
 import { expect, test } from 'vitest';
 import { TopicTabs } from './TopicTabs.js';
 import type { Topic } from './topicRegistry.js';

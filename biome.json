@@ -22,8 +22,7 @@
     "javascript": {
         "formatter": {
             "quoteStyle": "single"
-        },
-        "jsxRuntime": "reactClassic"
+        }
     },
     "assist": {
         "enabled": true,
