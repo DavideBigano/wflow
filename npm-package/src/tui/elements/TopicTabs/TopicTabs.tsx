@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import type { Topic, TopicId } from './topicRegistry.js';
+import type { Topic, TopicId } from '../../topicRegistry.js';
 
 export interface TopicTabsProps {
     topics: Topic[];
