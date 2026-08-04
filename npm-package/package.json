@@ -11,6 +11,7 @@
         "lint": "biome lint --write .",
         "format": "biome format --write .",
         "build": "npm run lint && npm run format && npm run typecheck && vite build && chmod +x dist/cli.mjs",
+        "build:unsafe": "vite build && chmod +x dist/cli.mjs",
         "start": "node dist/cli.mjs",
         "test": "vitest run",
         "test:update-snapshots": "vitest run -u"
@@ -46,6 +47,7 @@
         "ink-testing-library": "^4.0.0",
         "typescript": "^7.0.2",
         "vite": "^6.0.7",
+        "vite-node": "^2.1.8",
         "vitest": "^2.1.8"
     }
 }
