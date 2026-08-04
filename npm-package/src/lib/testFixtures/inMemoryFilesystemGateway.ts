@@ -27,8 +27,9 @@ export function createInMemoryFilesystemGateway(
         async move(from, to) {
             const normalizedFrom = normalize(from);
             const content = files.get(normalizedFrom);
-            if (content === undefined)
+            if (content === undefined) {
                 throw new Error(`fake fs: cannot move missing file ${from}`);
+            }
             files.delete(normalizedFrom);
             files.set(normalize(to), content);
         },
@@ -40,8 +41,9 @@ export function createInMemoryFilesystemGateway(
         },
         async readTextFile(target) {
             const content = files.get(normalize(target));
-            if (content === undefined)
+            if (content === undefined) {
                 throw new Error(`fake fs: no such file ${target}`);
+            }
             return content;
         },
     };
@@ -54,7 +56,9 @@ function normalize(target: string): string {
 function hasFilesUnder(files: Map<string, string>, dir: string): boolean {
     const prefix = `${dir}/`;
     for (const filePath of files.keys()) {
-        if (filePath.startsWith(prefix)) return true;
+        if (filePath.startsWith(prefix)) {
+            return true;
+        }
     }
     return false;
 }
@@ -64,7 +68,9 @@ function listDirEntries(files: Map<string, string>, dir: string): DirEntry[] {
     const seen = new Map<string, boolean>();
 
     for (const filePath of files.keys()) {
-        if (!filePath.startsWith(prefix)) continue;
+        if (!filePath.startsWith(prefix)) {
+            continue;
+        }
         const rest = filePath.slice(prefix.length);
         const [first, ...more] = rest.split('/');
         seen.set(first, more.length > 0);

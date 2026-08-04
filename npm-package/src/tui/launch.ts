@@ -1,5 +1,6 @@
 import { render } from 'ink';
 import React from 'react';
+import { InputEventProvider } from '../lib/inputEventProvider/index.js';
 import { WflowError } from '../lib/wflowError.js';
 import { Shell } from './components/Shell/Shell.js';
 import type { TopicId } from './topicRegistry.js';
@@ -20,10 +21,14 @@ export async function launchApp(options: LaunchOptions = {}): Promise<void> {
 
     const workspaceRoot = options.workspaceRoot ?? process.cwd();
     const { waitUntilExit } = render(
-        React.createElement(Shell, {
-            workspaceRoot,
-            initialTopicId: options.initialTopicId,
-        }),
+        React.createElement(
+            InputEventProvider,
+            { showDevtools: false },
+            React.createElement(Shell, {
+                workspaceRoot,
+                initialTopicId: options.initialTopicId,
+            }),
+        ),
     );
     await waitUntilExit();
 }

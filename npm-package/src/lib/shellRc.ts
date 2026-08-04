@@ -10,8 +10,12 @@ export function resolveShellRcFile(
     shellEnvVar: string | undefined = process.env.SHELL,
     home: string = homedir(),
 ): string {
-    if (shellEnvVar?.includes('zsh')) return path.join(home, '.zshrc');
-    if (shellEnvVar?.includes('bash')) return path.join(home, '.bashrc');
+    if (shellEnvVar?.includes('zsh')) {
+        return path.join(home, '.zshrc');
+    }
+    if (shellEnvVar?.includes('bash')) {
+        return path.join(home, '.bashrc');
+    }
 
     throw new WflowError(
         `could not determine your shell's rc file from $SHELL ("${shellEnvVar ?? ''}")`,

@@ -22,7 +22,9 @@ export async function relocateTree(
 ): Promise<string[]> {
     const moved: string[] = [];
 
-    if (!(await fs.pathExists(source))) return moved;
+    if (!(await fs.pathExists(source))) {
+        return moved;
+    }
 
     await transferEntries(source, source, destination, fs, moved);
 
@@ -41,7 +43,9 @@ async function transferEntries(
     moved: string[],
 ): Promise<void> {
     const entries = await fs.listDir(source);
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+        return;
+    }
 
     await fs.ensureDir(destination);
 

@@ -1,7 +1,7 @@
 import { render } from 'ink-testing-library';
 import { expect, test } from 'vitest';
-import { TopicTabs } from './TopicTabs.js';
 import type { Topic } from '../../topicRegistry.js';
+import { TopicTabs } from './TopicTabs.js';
 
 const topics: Topic[] = [
     { id: 'home', label: 'Home' },

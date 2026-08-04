@@ -38,7 +38,9 @@ export async function discoverOutputUnits(
     const units: OutputUnit[] = [];
 
     for (const entry of entries) {
-        if (!entry.isDirectory) continue;
+        if (!entry.isDirectory) {
+            continue;
+        }
 
         if (entry.name === 'outputs') {
             units.push({

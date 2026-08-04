@@ -1,7 +1,8 @@
-import { Box, useApp, useInput } from 'ink';
+import { Box, useApp } from 'ink';
 import { useCallback, useState } from 'react';
-import { TOPICS, type TopicId } from '../../topicRegistry.js';
+import { useInputListener } from '../../../lib/inputEventProvider/index.js';
 import { TopicTabs } from '../../elements/TopicTabs/TopicTabs.js';
+import { TOPICS, type TopicId } from '../../topicRegistry.js';
 import { ArchiverTopic } from '../ArchiverTopic/ArchiverTopic.js';
 import { HomeTopic } from '../HomeTopic/HomeTopic.js';
 
@@ -11,14 +12,14 @@ export interface ShellProps {
 }
 
 /**
- * Smart, bespoke component: owns the active tab and arbitrates global
- * left/right tab-switching against a topic's own use of those keys (e.g. a
- * yes/no confirm prompt) by suspending itself while that topic reports a modal open.
+ * Smart, bespoke component: owns the active tab and handles global left/right
+ * tab-switching. Registers on the shared input chain (see InputEventProvider)
+ * at the root, so any nested listener registered later — e.g. a topic's own
+ * confirm prompt — outranks it automatically and can swallow keys first.
  */
 export function Shell({ workspaceRoot, initialTopicId = 'home' }: ShellProps) {
     const { exit } = useApp();
     const [activeTopicId, setActiveTopicId] = useState<TopicId>(initialTopicId);
-    const [modalOpen, setModalOpen] = useState(false);
 
     const cycleTopic = useCallback(
         (direction: 1 | -1) => {
@@ -32,24 +33,22 @@ export function Shell({ workspaceRoot, initialTopicId = 'home' }: ShellProps) {
         [activeTopicId],
     );
 
-    useInput(
-        (input, key) => {
-            if (key.leftArrow) cycleTopic(-1);
-            else if (key.rightArrow) cycleTopic(1);
-            else if (key.escape || input === 'q') exit();
-        },
-        { isActive: !modalOpen },
-    );
+    useInputListener((input, key) => {
+        if (key.leftArrow) {
+            cycleTopic(-1);
+        } else if (key.rightArrow) {
+            cycleTopic(1);
+        } else if (key.escape || input === 'q') {
+            exit();
+        }
+    });
 
     return (
         <Box flexDirection="column">
             <TopicTabs topics={TOPICS} activeId={activeTopicId} />
             {activeTopicId === 'home' && <HomeTopic />}
             {activeTopicId === 'archiver' && (
-                <ArchiverTopic
-                    workspaceRoot={workspaceRoot}
-                    onModalStateChange={setModalOpen}
-                />
+                <ArchiverTopic workspaceRoot={workspaceRoot} />
             )}
         </Box>
     );

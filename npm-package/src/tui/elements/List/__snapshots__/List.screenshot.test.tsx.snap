@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`List highlights no item when selectedIndex is out of range, and all items fit the viewport 1`] = `
+"
+  alpha
+  beta
+  gamma
+"
+`;
+
+exports[`List highlights the first item when it is selected, and all items fit the viewport 1`] = `
+"
+› alpha
+  beta
+  gamma
+"
+`;
+
+exports[`List highlights the second item when it is selected, and all items fit the viewport 1`] = `
+"
+  alpha
+› beta
+  gamma
+"
+`;
+
+exports[`List renders scroll indicators when items overflow the viewport 1`] = `
+"↑ 4 more
+  item-4
+› item-5
+  item-6
+↓ 3 more"
+`;
