@@ -28,12 +28,14 @@ export interface ReviveResult {
 }
 
 /** The id of the run currently sitting in stages/run.json, or null if none is live. */
-export async function findRunningId(
+export async function findActiveId(
     workspaceRoot: string,
     fs: FilesystemGateway = nodeFilesystemGateway,
 ): Promise<string | null> {
     const runFile = resolveRunFile(workspaceRoot);
-    if (!(await fs.pathExists(runFile))) return null;
+    if (!(await fs.pathExists(runFile))) {
+        return null;
+    }
     return readRunId(runFile, fs);
 }
 
@@ -43,7 +45,9 @@ export async function listStashedRuns(
     fs: FilesystemGateway = nodeFilesystemGateway,
 ): Promise<string[]> {
     const archiveDir = resolveArchiveDir(workspaceRoot);
-    if (!(await fs.pathExists(archiveDir))) return [];
+    if (!(await fs.pathExists(archiveDir))) {
+        return [];
+    }
 
     const entries = await fs.listDir(archiveDir);
     const dirs = entries
@@ -68,11 +72,11 @@ export async function listStashedRuns(
 }
 
 /** Moves the live run's output units and run.json into archive/<run-id>/, emptying the live layers. */
-export async function stashRunningRun(
+export async function stashActiveRun(
     workspaceRoot: string,
     fs: FilesystemGateway = nodeFilesystemGateway,
 ): Promise<StashResult> {
-    const runId = await findRunningId(workspaceRoot, fs);
+    const runId = await findActiveId(workspaceRoot, fs);
     if (!runId) {
         throw new WflowError(
             'no run is currently active (stages/run.json not found)',
@@ -94,7 +98,9 @@ export async function stashRunningRun(
                 removeRootWhenEmpty: false,
             },
         );
-        if (moved.length > 0) movedUnits.push(unit.name);
+        if (moved.length > 0) {
+            movedUnits.push(unit.name);
+        }
     }
 
     await fs.move(
@@ -136,7 +142,7 @@ export async function reviveRun(
         );
     }
 
-    const runningId = await findRunningId(workspaceRoot, fs);
+    const runningId = await findActiveId(workspaceRoot, fs);
     let stashedRunIdFromAutoStash: string | undefined;
 
     if (runningId) {
@@ -146,7 +152,7 @@ export async function reviveRun(
                 'archive it first, or pass the auto-archive option to archive it automatically before restoring.',
             );
         }
-        const result = await stashRunningRun(workspaceRoot, fs);
+        const result = await stashActiveRun(workspaceRoot, fs);
         stashedRunIdFromAutoStash = result.runId;
     }
 

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { reviveRun, stashRunningRun } from './lib/runArchive.js';
+import { reviveRun, stashActiveRun } from './lib/runArchive.js';
 import { COMPLETION_MARKER, resolveShellRcFile } from './lib/shellRc.js';
 import { describeError } from './lib/wflowError.js';
 import { launchApp } from './tui/launch.js';
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
                         'Archive the currently running run, without the TUI',
                         () => {},
                         async () => {
-                            const result = await stashRunningRun(process.cwd());
+                            const result = await stashActiveRun(process.cwd());
                             const unitsLabel =
                                 result.movedUnits.length > 0
                                     ? result.movedUnits.join(', ')
@@ -92,10 +92,11 @@ async function main(): Promise<void> {
                                     autoStash: argv.autoArchive,
                                 },
                             );
-                            if (result.stashedRunId)
+                            if (result.stashedRunId) {
                                 console.log(
                                     `auto-archived running run "${result.stashedRunId}"`,
                                 );
+                            }
                             console.log(`restored "${result.revivedRunId}"`);
                         },
                     ),

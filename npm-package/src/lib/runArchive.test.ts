@@ -1,9 +1,9 @@
 import { expect, test } from 'vitest';
 import {
-    findRunningId,
+    findActiveId,
     listStashedRuns,
     reviveRun,
-    stashRunningRun,
+    stashActiveRun,
 } from './runArchive.js';
 import { createInMemoryFilesystemGateway } from './testFixtures/inMemoryFilesystemGateway.js';
 import { WflowError } from './wflowError.js';
@@ -16,13 +16,13 @@ test("findRunningId returns the live run's id when stages/run.json exists", asyn
         '/ws/stages/run.json': runJson('run-1'),
     });
 
-    await expect(findRunningId('/ws', fs)).resolves.toBe('run-1');
+    await expect(findActiveId('/ws', fs)).resolves.toBe('run-1');
 });
 
 test('findRunningId returns null when stages/run.json is absent', async () => {
     const fs = createInMemoryFilesystemGateway();
 
-    await expect(findRunningId('/ws', fs)).resolves.toBeNull();
+    await expect(findActiveId('/ws', fs)).resolves.toBeNull();
 });
 
 test('listStashedRuns returns only archived folders that still carry run.json', async () => {
@@ -41,7 +41,7 @@ test("stashRunningRun moves the live run's outputs and run.json under archive/<r
         '/ws/stages/01-intake/outputs/idea.json': '{}',
     });
 
-    await stashRunningRun('/ws', fs);
+    await stashActiveRun('/ws', fs);
 
     await expect(
         fs.readTextFile('/ws/archive/run-1/01-intake/idea.json'),
@@ -54,7 +54,7 @@ test('stashRunningRun leaves no live run.json behind afterwards', async () => {
         '/ws/stages/01-intake/outputs/idea.json': '{}',
     });
 
-    await stashRunningRun('/ws', fs);
+    await stashActiveRun('/ws', fs);
 
     await expect(fs.pathExists('/ws/stages/run.json')).resolves.toBe(false);
 });
@@ -62,7 +62,7 @@ test('stashRunningRun leaves no live run.json behind afterwards', async () => {
 test('stashRunningRun throws when no run is live', async () => {
     const fs = createInMemoryFilesystemGateway();
 
-    await expect(stashRunningRun('/ws', fs)).rejects.toThrow(WflowError);
+    await expect(stashActiveRun('/ws', fs)).rejects.toThrow(WflowError);
 });
 
 test("reviveRun moves an archived run's outputs and run.json back to the live layers", async () => {
