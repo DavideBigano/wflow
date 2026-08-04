@@ -5,20 +5,53 @@ exports[`ArchiverTopic renders an active run alongside stashed runs 1`] = `
 │ › Running: run-active                                                                            │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-  run-a
-  run-b
-  [refresh]
+    run-a
+    run-b
 
+    [refresh]
+↑/↓ select · enter confirm · r refresh"
+`;
+
+exports[`ArchiverTopic renders the confirm prompt centered over the run list on enter 1`] = `
+"┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ › Running: run-acti╭─────────────────────────────────────────────────────────╮                   │
+└────────────────────│       Archive currently running run "run-active"?       │───────────────────┘
+  no archived runs   │                      [Yes]    No                        │
+                     │ ←/→ or y/n to choose · enter to confirm · esc to cancel │
+                     ╰─────────────────────────────────────────────────────────╯
+    [refresh]
 ↑/↓ select · enter confirm · r refresh"
 `;
 
 exports[`ArchiverTopic renders the empty state 1`] = `
 "┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│   Running: none                                                                                  │
+│ › Running: none                                                                                  │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
+  no archived runs
 
-no archived runs
-› [refresh]
 
+    [refresh]
+↑/↓ select · enter confirm · r refresh"
+`;
+
+exports[`ArchiverTopic renders the error state 1`] = `
+"Oops...something went wrong.
+
+error: disk on fire"
+`;
+
+exports[`ArchiverTopic renders the loading state 1`] = `"Loading…"`;
+
+exports[`ArchiverTopic reserves enough room for a confirm prompt taller than the run list, with no bleed-through from the content behind it 1`] = `
+"┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                  Archive currently running run                                   │
+│ "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx │
+│ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx │
+│ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx │
+│                                         xxxxxxxxxxxxx"?                                          │
+│                                           [Yes]    No                                            │
+│                     ←/→ or y/n to choose · enter to confirm · esc to cancel                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ↑/↓ select · enter confirm · r refresh"
 `;
