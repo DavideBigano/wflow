@@ -1,0 +1,5 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StatusMessage renders an error message in red 1`] = `"disk on fire"`;
+
+exports[`StatusMessage renders the given message 1`] = `"archived "run-a""`;
