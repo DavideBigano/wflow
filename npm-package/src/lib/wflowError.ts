@@ -13,9 +13,13 @@ export class WflowError extends Error {
 export function describeError(error: unknown): string {
     if (error instanceof WflowError) {
         const lines = [`error: ${error.message}`];
-        if (error.hint) lines.push(`hint:  ${error.hint}`);
+        if (error.hint) {
+            lines.push(`hint:  ${error.hint}`);
+        }
         return lines.join('\n');
     }
-    if (error instanceof Error) return `error: ${error.message}`;
+    if (error instanceof Error) {
+        return `error: ${error.message}`;
+    }
     return `error: ${String(error)}`;
 }
