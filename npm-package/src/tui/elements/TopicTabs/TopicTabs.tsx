@@ -9,7 +9,7 @@ export interface TopicTabsProps {
 /** Dumb, reusable element: renders a horizontal tab strip from injected props, owns no state. */
 export function TopicTabs({ topics, activeId }: TopicTabsProps) {
     return (
-        <Box marginBottom={1}>
+        <Box>
             {topics.map((topic) => (
                 <Box key={topic.id} marginRight={2}>
                     <Text
