@@ -23,7 +23,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<void> {
     const { waitUntilExit } = render(
         React.createElement(
             InputEventProvider,
-            { showDevtools: false },
+            { showDevtools: true },
             React.createElement(Shell, {
                 workspaceRoot,
                 initialTopicId: options.initialTopicId,

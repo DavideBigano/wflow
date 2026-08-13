@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`List highlights no item when selectedIndex is out of range, and all items fit the viewport 1`] = `
+exports[`List highlights no item when not focused 1`] = `
 "
   alpha
   beta
@@ -8,7 +8,7 @@ exports[`List highlights no item when selectedIndex is out of range, and all ite
 "
 `;
 
-exports[`List highlights the first item when it is selected, and all items fit the viewport 1`] = `
+exports[`List highlights the first item when focused, and all items fit the viewport 1`] = `
 "
 › alpha
   beta
@@ -16,7 +16,7 @@ exports[`List highlights the first item when it is selected, and all items fit t
 "
 `;
 
-exports[`List highlights the second item when it is selected, and all items fit the viewport 1`] = `
+exports[`List highlights the second item when focused, and all items fit the viewport 1`] = `
 "
   alpha
 › beta
@@ -31,3 +31,7 @@ exports[`List renders scroll indicators when items overflow the viewport 1`] = `
   item-6
 ↓ 3 more"
 `;
+
+exports[`List renders the default fallback when none is provided and there are no items 1`] = `"  No items"`;
+
+exports[`List renders the provided fallback when there are no items 1`] = `"  Custom fallback"`;

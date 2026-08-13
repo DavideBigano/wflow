@@ -1,7 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Shell renders the home tab by default 1`] = `
-"‹ Home ›    Archiver    (←/→ switch tabs)
-
-TBD — nothing here yet."
+"┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│‹ Home ›    Archiver    (←/→ switch tabs)                                                         │
+│TBD — nothing here yet.                                                                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘"
 `;

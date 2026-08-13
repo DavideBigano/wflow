@@ -1,7 +1,13 @@
-import { render } from 'ink-testing-library';
+import type { render } from 'ink-testing-library';
 import { expect, test, vi } from 'vitest';
 import { InputEventProvider } from '../../../lib/inputEventProvider/index.js';
 import { findActiveId, listStashedRuns } from '../../../lib/runArchive.js';
+import {
+    Keys,
+    flush,
+    press,
+    renderAndSettle as renderOnce,
+} from '../../../testUtils/inkTestHelpers.js';
 import type { TopicTabsProps } from '../../elements/TopicTabs/TopicTabs.js';
 
 vi.mock('../../../lib/runArchive.js', () => ({
@@ -24,31 +30,19 @@ vi.mock('../../elements/TopicTabs/TopicTabs.js', () => ({
 
 const { Shell } = await import('./Shell.js');
 
-const LEFT = '\u001B[D';
-const RETURN = '\r';
-
-/** ink attaches its raw-mode input listener in an effect after mount, and registration/callback effects run asynchronously; flush a macrotask to let them all settle. */
-function flush() {
-    return new Promise((resolve) => setImmediate(resolve));
-}
-
+/**
+ * Several async hops deep: the mocked run-loading promises resolve, then
+ * ArchiverTopic re-renders into 'ready', then RunDisplay mounts and attaches
+ * its own input listener — each hop needs its own macrotask, so flush more
+ * than once.
+ */
 async function renderAndSettle(
     ...args: Parameters<typeof render>
 ): Promise<ReturnType<typeof render>> {
-    const result = render(...args);
-    // several async hops deep: the mocked run-loading promises resolve, then
-    // ArchiverTopic re-renders into 'ready', then RunDisplay mounts and attaches
-    // its own input listener — each hop needs its own macrotask, so flush more
-    // than once.
-    await flush();
+    const result = await renderOnce(...args);
     await flush();
     await flush();
     return result;
-}
-
-async function press(stdin: ReturnType<typeof render>['stdin'], key: string) {
-    stdin.write(key);
-    await flush();
 }
 
 test('an open confirm prompt blocks Shell from switching tabs on the left arrow', async () => {
@@ -62,12 +56,12 @@ test('an open confirm prompt blocks Shell from switching tabs on the left arrow'
     );
 
     // opens the confirm prompt on the active-run banner, selected by default
-    await press(stdin, RETURN);
+    await press(stdin, Keys.return);
     expect(lastFrame()).toContain('Archive currently running run');
 
     // the left arrow is the prompt's own "select yes" key while it's open —
     // it must not also reach Shell's tab-cycling listener beneath it
-    await press(stdin, LEFT);
+    await press(stdin, Keys.left);
 
     expect(topicTabsSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({ activeId: 'archiver' }),
@@ -84,7 +78,7 @@ test('the left arrow switches tabs normally when no confirm prompt is open', asy
         </InputEventProvider>,
     );
 
-    await press(stdin, LEFT);
+    await press(stdin, Keys.left);
 
     expect(topicTabsSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({ activeId: 'home' }),

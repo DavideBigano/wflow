@@ -14,7 +14,8 @@
         "build:unsafe": "vite build && chmod +x dist/cli.mjs",
         "start": "node dist/cli.mjs",
         "test": "vitest run",
-        "test:update-snapshots": "vitest run -u"
+        "test:update-snapshots": "vitest run -u",
+        "try:banner": "NODE_ENV=production vite-node scripts/try/Banner.tsx"
     },
     "repository": {
         "type": "git",
@@ -35,14 +36,14 @@
     },
     "homepage": "https://github.com/DavideBigano/wflow#readme",
     "dependencies": {
-        "ink": "^5.0.1",
-        "react": "^18.3.1",
+        "ink": "^6.1.0",
+        "react": "^19.0.0",
         "yargs": "^17.7.2"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.6",
         "@types/node": "^22.10.2",
-        "@types/react": "^18.3.18",
+        "@types/react": "^19.0.0",
         "@types/yargs": "^17.0.33",
         "ink-testing-library": "^4.0.0",
         "typescript": "^7.0.2",

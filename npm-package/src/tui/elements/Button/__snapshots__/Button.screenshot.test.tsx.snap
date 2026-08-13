@@ -1,0 +1,5 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button renders highlighted 1`] = `"[refresh]"`;
+
+exports[`Button renders not highlighted 1`] = `" refresh"`;

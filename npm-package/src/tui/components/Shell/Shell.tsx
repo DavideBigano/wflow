@@ -44,7 +44,7 @@ export function Shell({ workspaceRoot, initialTopicId = 'home' }: ShellProps) {
     });
 
     return (
-        <Box flexDirection="column">
+        <Box flexDirection="column" width="100%" borderStyle="single">
             <TopicTabs topics={TOPICS} activeId={activeTopicId} />
             {activeTopicId === 'home' && <HomeTopic />}
             {activeTopicId === 'archiver' && (

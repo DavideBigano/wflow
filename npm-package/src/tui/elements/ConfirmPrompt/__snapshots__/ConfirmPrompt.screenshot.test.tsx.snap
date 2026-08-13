@@ -3,38 +3,38 @@
 exports[`ConfirmPrompt renders with Yes highlighted by default 1`] = `
 "
 
-
-                     ╭─────────────────────────────────────────────────────────╮
-                     │                       Archive it?                       │
-                     │                      [Yes]    No                        │
-                     │ ←/→ or y/n to choose · enter to confirm · esc to cancel │
-                     ╰─────────────────────────────────────────────────────────╯
-
+                     ╭────────────────────────────────────────────────────────╮
+                     │                      Archive it?                       │
+                     │                                                        │
+                     │                      [Yes]    No                       │
+                     │                                                        │
+                     │←/→ or y/n to choose · enter to confirm · esc to cancel │
+                     ╰────────────────────────────────────────────────────────╯
 "
 `;
 
 exports[`ConfirmPrompt switches to No highlighted on right arrow 1`] = `
 "
 
-
-                     ╭─────────────────────────────────────────────────────────╮
-                     │                       Archive it?                       │
-                     │                      [Yes]    No                        │
-                     │ ←/→ or y/n to choose · enter to confirm · esc to cancel │
-                     ╰─────────────────────────────────────────────────────────╯
-
+                     ╭────────────────────────────────────────────────────────╮
+                     │                      Archive it?                       │
+                     │                                                        │
+                     │                       Yes    [No]                      │
+                     │                                                        │
+                     │←/→ or y/n to choose · enter to confirm · esc to cancel │
+                     ╰────────────────────────────────────────────────────────╯
 "
 `;
 
 exports[`ConfirmPrompt wraps a prompt too wide for the terminal 1`] = `
 "
-
- ╭────────────────────────────────────────────────────────────────────────────────────────────────╮
- │                                 Archive currently running run                                  │
- │ "run-with-a-very-long-identifier-that-does-not-fit-on-one-line-of-a-standard-terminal-window"? │
- │                                          [Yes]    No                                           │
- │                    ←/→ or y/n to choose · enter to confirm · esc to cancel                     │
- ╰────────────────────────────────────────────────────────────────────────────────────────────────╯
-
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                  Archive currently running run                                   │
+│ "run-with-a-very-long-identifier-that-does-not-fit-on-one-line-of-a-standard-terminal-window"?   │
+│                                                                                                  │
+│                                           [Yes]    No                                            │
+│                                                                                                  │
+│                     ←/→ or y/n to choose · enter to confirm · esc to cancel                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 "
 `;
