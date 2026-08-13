@@ -1,7 +1,12 @@
-import { render } from 'ink-testing-library';
 import { expect, test, vi } from 'vitest';
 import { InputEventProvider } from '../../../lib/inputEventProvider/index.js';
 import { findActiveId, listStashedRuns } from '../../../lib/runArchive.js';
+import {
+    flush,
+    Keys,
+    press,
+    renderAndSettle,
+} from '../../../testUtils/inkTestHelpers.js';
 import { ArchiverTopic } from './ArchiverTopic.js';
 
 vi.mock('../../../lib/runArchive.js', () => ({
@@ -11,11 +16,6 @@ vi.mock('../../../lib/runArchive.js', () => ({
     reviveRun: vi.fn(),
 }));
 
-/** Lets the initial load effect's promises settle before reading the frame. */
-async function flushLoad() {
-    await new Promise((resolve) => setImmediate(resolve));
-}
-
 /**
  * Several async hops deep: the mocked run-loading promises resolve, then
  * ArchiverTopic re-renders into 'ready', then RunDisplay mounts and attaches
@@ -23,16 +23,16 @@ async function flushLoad() {
  * than once.
  */
 async function flushLoadFully() {
-    await flushLoad();
-    await flushLoad();
-    await flushLoad();
+    await flush();
+    await flush();
+    await flush();
 }
 
-test('ArchiverTopic renders the loading state', () => {
+test('ArchiverTopic renders the loading state', async () => {
     vi.mocked(findActiveId).mockReturnValue(new Promise(() => {}));
     vi.mocked(listStashedRuns).mockReturnValue(new Promise(() => {}));
 
-    const { lastFrame } = render(
+    const { lastFrame } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
@@ -45,12 +45,12 @@ test('ArchiverTopic renders the error state', async () => {
     vi.mocked(findActiveId).mockRejectedValue(new Error('disk on fire'));
     vi.mocked(listStashedRuns).mockResolvedValue([]);
 
-    const { lastFrame } = render(
+    const { lastFrame } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
     );
-    await flushLoad();
+    await flush();
 
     expect(lastFrame()).toMatchSnapshot();
 });
@@ -59,12 +59,12 @@ test('ArchiverTopic renders the empty state', async () => {
     vi.mocked(findActiveId).mockResolvedValue(null);
     vi.mocked(listStashedRuns).mockResolvedValue([]);
 
-    const { lastFrame } = render(
+    const { lastFrame } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
     );
-    await flushLoad();
+    await flush();
 
     expect(lastFrame()).toMatchSnapshot();
 });
@@ -73,12 +73,40 @@ test('ArchiverTopic renders an active run alongside stashed runs', async () => {
     vi.mocked(findActiveId).mockResolvedValue('run-active');
     vi.mocked(listStashedRuns).mockResolvedValue(['run-a', 'run-b']);
 
-    const { lastFrame } = render(
+    const { lastFrame } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
     );
-    await flushLoad();
+    await flush();
+
+    expect(lastFrame()).toMatchSnapshot();
+});
+
+test('ArchiverTopic renders no active run alongside stashed runs', async () => {
+    vi.mocked(findActiveId).mockResolvedValue(null);
+    vi.mocked(listStashedRuns).mockResolvedValue(['run-a', 'run-b']);
+
+    const { lastFrame } = await renderAndSettle(
+        <InputEventProvider>
+            <ArchiverTopic workspaceRoot="/tmp/ws" />
+        </InputEventProvider>,
+    );
+    await flush();
+
+    expect(lastFrame()).toMatchSnapshot();
+});
+
+test('ArchiverTopic renders an active run and no stashed runs', async () => {
+    vi.mocked(findActiveId).mockResolvedValue('run-active');
+    vi.mocked(listStashedRuns).mockResolvedValue([]);
+
+    const { lastFrame } = await renderAndSettle(
+        <InputEventProvider>
+            <ArchiverTopic workspaceRoot="/tmp/ws" />
+        </InputEventProvider>,
+    );
+    await flush();
 
     expect(lastFrame()).toMatchSnapshot();
 });
@@ -87,15 +115,14 @@ test('ArchiverTopic renders the confirm prompt centered over the run list on ent
     vi.mocked(findActiveId).mockResolvedValue('run-active');
     vi.mocked(listStashedRuns).mockResolvedValue([]);
 
-    const { lastFrame, stdin } = render(
+    const { lastFrame, stdin } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
     );
     await flushLoadFully();
 
-    stdin.write('\r');
-    await flushLoad();
+    await press(stdin, Keys.return);
 
     expect(lastFrame()).toMatchSnapshot();
 });
@@ -110,15 +137,14 @@ test('ArchiverTopic reserves enough room for a confirm prompt taller than the ru
     vi.mocked(findActiveId).mockResolvedValue(longRunId);
     vi.mocked(listStashedRuns).mockResolvedValue([]);
 
-    const { lastFrame, stdin } = render(
+    const { lastFrame, stdin } = await renderAndSettle(
         <InputEventProvider>
             <ArchiverTopic workspaceRoot="/tmp/ws" />
         </InputEventProvider>,
     );
     await flushLoadFully();
 
-    stdin.write('\r');
-    await flushLoad();
+    await press(stdin, Keys.return);
 
     const frame = lastFrame() ?? '';
     expect(frame).toContain('↑/↓ select · enter confirm · r refresh');
