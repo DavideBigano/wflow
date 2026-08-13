@@ -1,12 +1,22 @@
 import { Box, Text } from 'ink';
+import type { StackElement } from '../provider/InputEventProvider.js';
 
 export interface InputChainDevtoolsProps {
-    stack: { name: string; sequence: number }[];
+    stack: StackElement[];
+    /** The listener a keypress would currently be dispatched to first, if any. */
+    focused: StackElement | null;
 }
 
-/** Dumb, reusable element: lists currently registered input-chain listeners, lowest priority first. */
-export function InputChainDevtools({ stack }: InputChainDevtoolsProps) {
-    const bySequenceAsc = [...stack].sort((a, b) => a.sequence - b.sequence);
+const TABLE_HEADER = 'Input Listeners';
+
+/** Dumb, reusable element: lists currently registered input-chain listeners, lowest priority first, highlighting the focused one. */
+export function InputChainDevtools({
+    stack,
+    focused,
+}: InputChainDevtoolsProps) {
+    const bySequenceAsc = [...stack].sort(
+        (a, b) => a.sequenceNumber - b.sequenceNumber,
+    );
 
     return (
         <Box borderStyle="single" flexDirection="column">
@@ -19,18 +29,25 @@ export function InputChainDevtools({ stack }: InputChainDevtoolsProps) {
                 paddingRight={1}
             >
                 <Text bold underline>
-                    {'Input Listeners'}
+                    {TABLE_HEADER}
                 </Text>
             </Box>
-            <Box flexDirection="column" paddingX={1}>
+            <Box flexDirection="column" paddingX={1} width="100%">
                 {bySequenceAsc.length === 0 && <Text dimColor>(empty)</Text>}
-                {bySequenceAsc.map((entry, index) => (
-                    <Text key={entry.sequence}>
-                        {index + 1}
-                        {'. '}
-                        {entry.name}
-                    </Text>
-                ))}
+                {bySequenceAsc.map((entry, index) => {
+                    const isFocused = entry === focused;
+                    return (
+                        <Text
+                            key={entry.sequenceNumber}
+                            color={isFocused ? 'cyan' : undefined}
+                        >
+                            {isFocused ? '› ' : '  '}
+                            {index + 1}
+                            {'. '}
+                            {entry.name ?? entry.id}
+                        </Text>
+                    );
+                })}
             </Box>
         </Box>
     );
