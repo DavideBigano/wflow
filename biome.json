@@ -19,6 +19,20 @@
             "preset": "recommended",
             "style": {
                 "useBlockStatements": "error"
+            },
+            "correctness": {
+                "useExhaustiveDependencies": {
+                    "level": "error",
+                    "options": {
+                        "hooks": [
+                            {
+                                "name": "usePromise",
+                                "closureIndex": 0,
+                                "dependenciesIndex": 1
+                            }
+                        ]
+                    }
+                }
             }
         }
     },
