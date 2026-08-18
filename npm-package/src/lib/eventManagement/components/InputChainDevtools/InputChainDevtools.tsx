@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import type { StackElement } from '../provider/InputEventProvider.js';
+import type { StackElement } from '../InputEventProvider/InputEventProvider.js';
 
 export interface InputChainDevtoolsProps {
     stack: StackElement[];

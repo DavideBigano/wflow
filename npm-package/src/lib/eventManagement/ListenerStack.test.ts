@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { StackElement } from './InputEventProvider.js';
+import type { StackElement } from './components/InputEventProvider/InputEventProvider.js';
 import { ListenerStack } from './ListenerStack.js';
 
 /** Sequence number is all these tests care about — name/listener are irrelevant filler. */
