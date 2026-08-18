@@ -1,4 +1,4 @@
-import type { InputEventListener } from './InputEventProvider.js';
+import type { InputEventListener } from './components/InputEventProvider/InputEventProvider.js';
 
 /**
  * Minimal shape of a React Fiber — only the fields this module reads.

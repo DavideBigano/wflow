@@ -1,4 +1,4 @@
-import type { StackElement } from './InputEventProvider.js';
+import type { StackElement } from './components/InputEventProvider/InputEventProvider.js';
 
 /**
  * Immutable stack of registered input listeners, kept sorted by
