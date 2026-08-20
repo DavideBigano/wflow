@@ -7,7 +7,7 @@ import type { InputEventListener } from './components/InputEventProvider/InputEv
  * Confirmed this against react@19.2.8.
  */
 export interface FiberNode {
-    /** Parent fiber — walked to resolve dispatch ancestry and pre-order predecessors. */
+    /** Parent fiber — walked by `findRoot` to reach the tree root before a DFS traversal. */
     return: FiberNode | null;
     /** First child fiber — walked to resolve pre-order successors. */
     child: FiberNode | null;
@@ -20,6 +20,14 @@ export interface RegistryElement {
     name: string | null;
     /** Refreshed every render via `getOwner()` — never cached across renders, since fibers double-buffer. Cleared to `null` in the owning hook's unmount effect. */
     fiber: FiberNode;
+    /**
+     * Reference to the previous registry element in DFS order. Stored for
+     * listener unregistration because that procedure happens when the newly
+     * rendered tree has already been committed and thus the fiber's pointers
+     * have already been set to `null` (this applies only for unmounted
+     * components). Refreshed every render alongside.
+     */
+    fallbackElement: RegistryElement | null;
     listener: InputEventListener;
 }
 
@@ -43,34 +51,41 @@ export function register(
 
 /**
  * Removes the entry matching the provided `listenerId`. If that was focused,
- * falls back to the previous entry, wrapping around.
+ * falls back to its `fallbackElement` if still registered, otherwise to the
+ * first remaining entry in tree order.
  * @throws if `listenerId` isn't registered.
  */
 export function unregister(
     registry: ListenerRegistry,
     listenerId: string,
 ): ListenerRegistry {
-    const removed = registry.listeners.find((l) => l.id === listenerId);
+    const { listeners, focused } = registry;
+
+    const removed = listeners.find((l) => l.id === listenerId);
     if (!removed) {
         throw new Error(
             `No listener found with the provided ID: ${listenerId}.`,
         );
     }
 
-    const listeners = registry.listeners.filter((l) => l.id !== listenerId);
+    const newListeners = listeners.filter((l) => l.id !== listenerId);
 
-    if (registry.focused?.id !== listenerId) {
-        return { listeners, focused: registry.focused };
+    if (focused?.id !== listenerId) {
+        return { listeners: newListeners, focused };
     }
 
-    const orderedFibers = getOrderedFibers(registry.focused.fiber);
+    // checks that `fallbackElement` is a registered element
+    let newFocused = focused.fallbackElement;
+    while (newFocused && newListeners.indexOf(newFocused) < 0) {
+        newFocused = newFocused.fallbackElement;
+    }
 
-    const focused =
-        // using old registry as we need to find the removed listener's fiber to
-        // get the previous one
-        getPrevious(registry.listeners, orderedFibers, removed.fiber) ??
-        getLast(listeners, orderedFibers);
-    return { listeners, focused };
+    return {
+        listeners: newListeners,
+        focused:
+            newFocused ??
+            getFirst(newListeners, getOrderedFibers(newListeners[0].fiber)),
+    };
 }
 
 /**
@@ -205,6 +220,31 @@ export function moveFocus(
     return { listeners: registry.listeners, focused };
 }
 
+/**
+ * The focused listener, then each registered entry before it in DFS
+ * order without wrapping. Empty if nothing is focused.
+ */
+export function getDispatchChain(
+    registry: ListenerRegistry,
+): RegistryElement[] {
+    const { listeners, focused } = registry;
+
+    if (!focused) {
+        return [];
+    }
+
+    const orderedFibers = getOrderedFibers(focused.fiber);
+
+    const chain: RegistryElement[] = [];
+    let current: RegistryElement | null = focused;
+    do {
+        chain.push(current);
+        current = getPrevious(listeners, orderedFibers, current.fiber);
+    } while (current);
+
+    return chain;
+}
+
 /** Walks up the fiber tree to the root via `.return`. */
 export function findRoot(fiber: FiberNode): FiberNode {
     let current = fiber;
@@ -243,4 +283,14 @@ export function _getOrderedFibers(fiber: FiberNode): FiberNode[] {
     }
 
     return ordered;
+}
+
+/**
+ * Finds {@link element} inside {@link listeners}. Returns `null` on fail.
+ */
+export function findElement(
+    listeners: RegistryElement[],
+    element: RegistryElement,
+): RegistryElement | null {
+    return listeners.find((listener) => listener === element) || null;
 }
