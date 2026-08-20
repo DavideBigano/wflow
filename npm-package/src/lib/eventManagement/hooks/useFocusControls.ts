@@ -62,19 +62,3 @@ export function useFocusControls(): FocusControls {
 
     return { focusNext, focusPrev, focus };
 }
-
-/**
- * Reactive view of whether `listenerId` is the currently focused entry on
- * the input chain — re-renders the calling component whenever focus moves,
- * unlike reading the stack directly (which only lives in a ref).
- * @throws if used outside an `InputEventProvider` subtree
- */
-export function useFocus(listenerId: string): boolean {
-    const context = useContext(InputEventContext);
-    if (!context) {
-        throw new Error(
-            'useFocus must be used within an InputEventProvider subtree',
-        );
-    }
-    return context.focusedId === listenerId;
-}

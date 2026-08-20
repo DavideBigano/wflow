@@ -3,12 +3,12 @@ export {
     type InputEventListener,
     InputEventProvider,
 } from './components/InputEventProvider/InputEventProvider.js';
+export { useFocus } from './hooks/useFocus.js';
 export {
     type FocusControls,
-    useFocus,
     useFocusControls,
-} from './hooks/focusHooks.js';
+} from './hooks/useFocusControls.js';
 export {
     type UseInputListenerOptions,
     useInputListener,
-} from './hooks/inputHooks.js';
+} from './hooks/useInputListener.js';

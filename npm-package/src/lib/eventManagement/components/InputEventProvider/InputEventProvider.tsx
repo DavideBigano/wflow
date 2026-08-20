@@ -8,8 +8,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import { useFocusControls } from '../../hooks/focusHooks.js';
-import { useInputListener } from '../../hooks/inputHooks.js';
 import { ListenerStack } from '../../ListenerStack.js';
 import { InputChainDevtools } from '../InputChainDevtools/InputChainDevtools.js';
 
@@ -58,6 +56,8 @@ export const InputEventContext = createContext<InputEventContextValue | null>(
 type InputEventProviderProps = PropsWithChildren<{
     /** Shows the input-chain devtools panel. Defaults to `WFLOW_DEBUG_INPUT_CHAIN === 1`. */
     showDevtools?: boolean;
+    /** Suppresses tab-bases focus movement. Defaults to `false`. */
+    suppressTabNavigation?: boolean;
 }>;
 
 /**
@@ -71,6 +71,7 @@ type InputEventProviderProps = PropsWithChildren<{
 export function InputEventProvider({
     children,
     showDevtools = process.env.WFLOW_DEBUG_INPUT_CHAIN === '1',
+    suppressTabNavigation = false,
 }: InputEventProviderProps) {
     const stackRef = useRef(ListenerStack.empty());
     const [devtoolsStack, setDevtoolsStack] = useState<StackElement[]>([]);
@@ -80,8 +81,7 @@ export function InputEventProvider({
     const [focusedId, setFocusedId] = useState<string | null>(null);
 
     const notify = useCallback(() => {
-        const focused =
-            stackRef.current.getFocusedListeners().next().value ?? null;
+        const focused = stackRef.current.focusedItem;
         setFocusedId(focused?.id ?? null);
         if (!showDevtools) {
             return;
@@ -105,20 +105,30 @@ export function InputEventProvider({
         const inputEventKey: InputEventKey = { ...key, empty };
 
         let stopPropagation = false;
-        for (const entry of stackRef.current.getFocusedListeners()) {
-            entry.listener(input, inputEventKey, () => {
+        for (const { listener } of stackRef.current.getFocusedListeners()) {
+            listener(input, inputEventKey, () => {
                 stopPropagation = true;
             });
             if (stopPropagation) {
                 break;
             }
         }
+
+        if (suppressTabNavigation) {
+            return;
+        }
+
+        if (key.tab && !key.shift) {
+            stackRef.current.moveFocus(1);
+        } else if (key.tab && key.shift) {
+            stackRef.current.moveFocus(-1);
+        }
     });
 
     if (!showDevtools) {
         return (
             <InputEventContext.Provider value={contextValue}>
-                <InitTabNavigation>{children}</InitTabNavigation>
+                {children}
             </InputEventContext.Provider>
         );
     }
@@ -127,7 +137,7 @@ export function InputEventProvider({
         <Box flexDirection="row" width="100%">
             <Box flexGrow={1}>
                 <InputEventContext.Provider value={contextValue}>
-                    <InitTabNavigation>{children}</InitTabNavigation>
+                    {children}
                 </InputEventContext.Provider>
             </Box>
             <Box flexShrink={0}>
@@ -138,19 +148,4 @@ export function InputEventProvider({
             </Box>
         </Box>
     );
-}
-
-export interface InitTabNavigationProps extends PropsWithChildren {}
-
-export function InitTabNavigation({ children }: InitTabNavigationProps) {
-    const { focusPrev, focusNext } = useFocusControls();
-    useInputListener((_input, key) => {
-        if (key.tab && !key.shift) {
-            focusNext();
-        } else if (key.tab && key.shift) {
-            focusPrev();
-        }
-    });
-
-    return children;
 }
