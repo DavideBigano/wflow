@@ -20,8 +20,8 @@ import type { StackElement } from './components/InputEventProvider/InputEventPro
  * - Focus is `null` only when the stack is empty.
  */
 export class ListenerStack implements Iterable<StackElement> {
-    private readonly items: readonly StackElement[];
-    private readonly focusedItem: StackElement | null;
+    public readonly items: readonly StackElement[];
+    public readonly focusedItem: StackElement | null;
 
     private constructor(
         items: readonly StackElement[],
@@ -105,16 +105,14 @@ export class ListenerStack implements Iterable<StackElement> {
     /**
      * The focused listener, then each less-nested one down to the bottom of
      * the stack — the dispatch order for a single keypress. Empty if the
-     * stack itself is empty.
+     * stack itself is empty or if there is no focused listener.
      */
-    *getFocusedListeners(): IterableIterator<StackElement> {
+    getFocusedListeners(): StackElement[] {
         if (!this.focusedItem) {
-            return;
+            return [];
         }
         const startIndex = Math.max(this.items.indexOf(this.focusedItem), 0);
-        for (let i = startIndex; i >= 0; i--) {
-            yield this.items[i];
-        }
+        return this.items.slice(0, startIndex + 1).reverse();
     }
 
     /** Bottom to top — the same order the stack is stored in. */
