@@ -33,7 +33,6 @@ export const Keys = {
     right: `${ESC}[C`,
     return: '\r',
     escape: ESC,
-    shift: `${ESC}[Z`,
 } as const;
 
 type Keys = (typeof Keys)[keyof typeof Keys];
