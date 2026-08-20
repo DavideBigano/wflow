@@ -8,7 +8,7 @@ import {
 } from '../components/InputEventProvider/InputEventProvider.js';
 
 export interface UseInputListenerOptions {
-    /** Shown in the devtools panel. */
+    /** Display name for the listener. Shown in the devtools panel. */
     name?: string;
     /** For compatibility with ink's `useInput` option. */
     isActive?: boolean;
@@ -17,11 +17,11 @@ export interface UseInputListenerOptions {
 }
 
 /**
- * Registers `listener` on the shared input chain for the lifetime of the calling
- * component. Position in the stack is fixed at mount (registration order) —
- * passing a new `listener`/`options` on a later render updates its behavior but
- * never its position in the chain. Mounting always takes focus, and unmounting
- * releases it if it was held.
+ * Register the provided `listener` the lifetime of the calling component.
+ * Position in the stack is determined by call order. On subsequent renders,
+ * if `listener` or `options` change, they get updated on the registry but
+ * their position in the chain doesn't updatde. Registration always takes
+ * focus, and unregistration releases it if it was held.
  * @throws if used outside an `InputEventProvider` subtree
  */
 export function useInputListener(
