@@ -1,7 +1,7 @@
 import { useCallback, useContext } from 'react';
 import { InputEventContext } from '../components/InputEventProvider/InputEventProvider.js';
+import { getElement, getMovedFocus } from '../ListenerRegistry.js';
 
-/** `steps` is a magnitude — direction is already implied by which of focusNext/focusPrev was called. */
 function assertNonNegativeSteps(steps: number): void {
     if (steps < 0) {
         throw new Error(`steps must be non-negative, got ${steps}`);
@@ -11,18 +11,17 @@ function assertNonNegativeSteps(steps: number): void {
 export type MoveFocusCallback = (options?: { steps?: number }) => void;
 
 export interface FocusControls {
-    /** Moves focus to the next (most-recently-mounted) listener, wrapping to the first one after the last. */
+    /** Moves focus to the next listener, wrapping to the first one after the last. */
     focusNext: MoveFocusCallback;
-    /** Moves focus to the previous (earliest-mounted) listener, wrapping the last one after the first. */
+    /** Moves focus to the previous listener, wrapping the last one after the first. */
     focusPrev: MoveFocusCallback;
-    /** Moves fosuc to a listener identified by id */
+    /** Moves focus to a listener identified by id */
     focus: (listenerId: string) => void;
 }
 
 /**
- * Lets a component move which registered listener is currently focused. From there
- * the event propagates as usual. Listeners mounted after the currently focused one
- * are ignored.
+ * Lets a component change which registered listener is currently focused. From there
+ * the event propagates as usual. Listeners after the focused one are ignored.
  * @throws if used outside an `InputEventProvider` subtree
  */
 export function useFocusControls(): FocusControls {
@@ -32,33 +31,35 @@ export function useFocusControls(): FocusControls {
             'useFocusControls must be used within an InputEventProvider subtree',
         );
     }
-    const { stackRef, notify } = context;
+
+    const { registry, setFocused } = context;
 
     const focusNext: MoveFocusCallback = useCallback(
         (options = {}) => {
             const { steps = 1 } = options;
             assertNonNegativeSteps(steps); // this is a magnitude, always positive
-            stackRef.current = stackRef.current.moveFocus(steps);
-            notify();
+            setFocused((current) =>
+                getMovedFocus(registry.current, current, steps),
+            );
         },
-        [stackRef, notify],
+        [registry, setFocused],
     );
     const focusPrev: MoveFocusCallback = useCallback(
         (options = {}) => {
             const { steps = 1 } = options;
             assertNonNegativeSteps(steps); // this is a magnitude, always positive
-            stackRef.current = stackRef.current.moveFocus(-steps);
-            notify();
+            setFocused((current) =>
+                getMovedFocus(registry.current, current, -steps),
+            );
         },
-        [stackRef, notify],
+        [registry, setFocused],
     );
-    const focus: (listenerId: string) => void = useCallback(
+    const focusById: (listenerId: string) => void = useCallback(
         (listenerId: string) => {
-            stackRef.current = stackRef.current.focus(listenerId);
-            notify();
+            setFocused(getElement(registry.current, listenerId));
         },
-        [stackRef, notify],
+        [registry, setFocused],
     );
 
-    return { focusNext, focusPrev, focus };
+    return { focusNext, focusPrev, focus: focusById };
 }

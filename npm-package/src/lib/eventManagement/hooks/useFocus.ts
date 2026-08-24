@@ -2,8 +2,8 @@ import { useContext } from 'react';
 import { InputEventContext } from '../components/InputEventProvider/InputEventProvider.js';
 
 /**
- * Returns true if the listener matching `listenerId` is currently
- * foucsed. False otherwise.
+ * Returns true if the listener matching `listenerId` is currently foucsed.
+ * False otherwise.
  * @throws if used outside an `InputEventProvider` subtree
  */
 export function useFocus(listenerId: string): boolean {
@@ -13,5 +13,5 @@ export function useFocus(listenerId: string): boolean {
             'useFocus must be used within an InputEventProvider subtree',
         );
     }
-    return context.focusedId === listenerId;
+    return context.focused?.id === listenerId;
 }
