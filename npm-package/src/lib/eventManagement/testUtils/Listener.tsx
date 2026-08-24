@@ -11,6 +11,9 @@ export interface ListenerProps extends PropsWithChildren {
     onInput?: InputEventListener;
 }
 
+/**
+ * Test-only wrapper to set event listeners on demand.
+ */
 export function Listener({
     autofocus,
     inputOptions,

@@ -1,6 +1,6 @@
 import { type PropsWithChildren, type RefObject, useContext } from 'react';
 import { InputEventContext } from '../components/InputEventProvider/InputEventProvider';
-import { getDispatchChain, type ListenerRegistry } from '../ListenerRegistry';
+import { getDispatchChain, type RegistryElement } from '../ListenerRegistry';
 
 export interface RegistrySpies {
     /** Returns a list of listener ids that can be reached by an input, starting from the listener that fires first */
@@ -9,33 +9,39 @@ export interface RegistrySpies {
     getPropagationChainNames: () => (string | null)[];
 }
 
-export interface ListenerRegistryHarnessProps extends PropsWithChildren {
-    registryRef?: RefObject<ListenerRegistry>;
+export interface RegistryHarnessProps extends PropsWithChildren {
+    registryRef?: RefObject<readonly RegistryElement[]>;
     registrySpies?: RegistrySpies;
 }
 
-export function ListenerRegistryHarness({
+/**
+ * Test-only bridge that exposes the current registry contents and
+ * dispatch-chain queries to the test via `registryRef` and `registrySpies`.
+ */
+export function RegistryHarness({
     registryRef,
     registrySpies,
     children,
-}: ListenerRegistryHarnessProps) {
+}: RegistryHarnessProps) {
     const context = useContext(InputEventContext);
     if (!context) {
         throw new Error(
             'useInputListener must be used within an InputEventProvider subtree',
         );
     }
-    const { registryRef: contextRegistryRef } = context;
+
+    const { registry, focused } = context;
+
     if (registryRef) {
-        registryRef.current = contextRegistryRef.current;
+        registryRef.current = registry.current;
     }
     if (registrySpies) {
         registrySpies.getPropagationChainIds = () =>
-            getDispatchChain(contextRegistryRef.current).map(
+            getDispatchChain(registry.current, focused).map(
                 (listener) => listener.id,
             );
         registrySpies.getPropagationChainNames = () =>
-            getDispatchChain(contextRegistryRef.current).map(
+            getDispatchChain(registry.current, focused).map(
                 (listener) => listener.name,
             );
     }
