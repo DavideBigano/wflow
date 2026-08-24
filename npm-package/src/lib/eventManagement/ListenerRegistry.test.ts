@@ -41,6 +41,7 @@ function createElement(
         fiber: fiber || createFiber(),
         fallbackElement,
         listener: vi.fn(),
+        isActive: true,
     };
 }
 
@@ -433,6 +434,59 @@ describe('getPrevious', () => {
         expect(getPrevious(listeners, orderedFibers, b)?.id).toBe('a2');
     });
 
+    test('returns the left sibling', () => {
+        const { a1, a2, b } = createTree();
+        const listeners = [createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test('returns the parent', () => {
+        const { a, a2, b } = createTree();
+        const listeners = [createElement('a', a)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a');
+    });
+
+    test('returns the closest left sibling, even with a gap', () => {
+        const { a1, a2 } = createTree();
+        const gap = createFiber();
+        attachSibling(a1, gap);
+        attachSibling(gap, a2);
+        const listeners = [createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test('returns the closest ancestor, even with a gap', () => {
+        const { a, b } = createTreeWithGaps();
+        const listeners = [createElement('a', a)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, b)?.id).toBe('a');
+    });
+
+    test('a left sibling beats a parent or ancestor', () => {
+        const { a, a1, a2 } = createTree();
+        const listeners = [createElement('a', a), createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test("a left sibling's child beats the left sibling", () => {
+        const { a1, a2 } = createTree();
+        const a11 = createFiber();
+        attachChild(a1, a11);
+        const listeners = [createElement('a1', a1), createElement('a11', a11)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a11');
+    });
+
     test('returns null when `from` is first in render order', () => {
         const { a, a2, b } = createTree();
         const listeners = [createElement('a2', a2), createElement('b', b)];
@@ -503,7 +557,7 @@ describe('moveFocus', () => {
         expect(result.focused).toBe(second);
     });
 
-    test('steps focus forward by two, actually advancing twice', () => {
+    test('steps focus forward by two', () => {
         const { a1, a2, b } = createTree();
         const first = createElement('a1', a1);
         const second = createElement('a2', a2);

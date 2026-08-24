@@ -29,6 +29,7 @@ export interface RegistryElement {
      */
     fallbackElement: RegistryElement | null;
     listener: InputEventListener;
+    isActive: boolean;
 }
 
 export interface ListenerRegistry {
