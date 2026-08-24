@@ -1,11 +1,16 @@
 import { useContext, useEffect, useRef } from 'react';
 import {
-    createId,
     InputEventContext,
     type InputEventListener,
-    nextSequenceNumber,
-    type StackElement,
 } from '../components/InputEventProvider/InputEventProvider.js';
+import { getOwnerFiber } from '../getOwnerFiber.js';
+import {
+    getOrderedFibers,
+    getPrevious,
+    type RegistryElement,
+    register,
+    unregister,
+} from '../ListenerRegistry.js';
 
 export interface UseInputListenerOptions {
     /** Display name for the listener. Shown in the devtools panel. */
@@ -14,14 +19,15 @@ export interface UseInputListenerOptions {
     isActive?: boolean;
     /** Custom id that can be provided to manage focus */
     id?: string;
+    /** Automatically focuses this listener if there is no currently focused element. */
+    autofocus?: boolean;
 }
 
 /**
- * Register the provided `listener` the lifetime of the calling component.
- * Position in the stack is determined by call order. On subsequent renders,
- * if `listener` or `options` change, they get updated on the registry but
- * their position in the chain doesn't updatde. Registration always takes
- * focus, and unregistration releases it if it was held.
+ * Register the provided `listener` for the lifetime of the calling
+ * component. The listener will be called based on it's position and
+ * focus. Registration never takes focus (unless the option `autofocus`
+ * is provided) and unregistration releases it if it was held.
  * @throws if used outside an `InputEventProvider` subtree
  */
 export function useInputListener(
@@ -34,49 +40,62 @@ export function useInputListener(
             'useInputListener must be used within an InputEventProvider subtree',
         );
     }
-    const { stackRef, notify } = context;
+    const { registry, focused, setFocused } = context;
 
-    const { name = null, isActive = true, id = createId() } = options;
+    const {
+        autofocus = false,
+        id = createId(),
+        isActive = true,
+        name = null,
+    } = options;
 
-    const listenerRef = useRef(listener);
+    const fiber = getOwnerFiber();
 
-    const listenerId = useRef(id);
-    const listenerName = useRef<string | null>(name);
-
-    const isActiveRef = useRef(isActive);
-
-    // captured once on first render to determine parent-before-child order
-    const sequenceRef = useRef(nextSequenceNumber());
-
-    // keeps the live listener/name/isActive/isFocused synced by running on every render
-    useEffect(() => {
-        listenerRef.current = listener;
-        listenerName.current = name;
-        isActiveRef.current = isActive;
+    const entryRef = useRef<RegistryElement>({
+        id,
+        name,
+        listener,
+        fiber,
+        fallbackElement: null,
+        isActive,
     });
 
-    // registers a stable wrapper once; when the wrapper gets called it applies
-    // the live listener
+    // updated most of the entrie's data on every render
     useEffect(() => {
-        const wrapper: InputEventListener = (input, key, stopPropagation) => {
-            if (!isActiveRef.current) {
-                return;
-            }
-            listenerRef.current(input, key, stopPropagation);
-        };
-        const entry: StackElement = {
-            id: listenerId.current,
-            listener: wrapper,
-            name: listenerName.current,
-            sequenceNumber: sequenceRef.current,
-        };
-        stackRef.current = stackRef.current.push(entry);
-        notify();
-        return () => {
-            stackRef.current = stackRef.current.remove(entry);
-            notify();
-        };
-    }, [stackRef, notify]);
+        entryRef.current.fiber = fiber;
+        entryRef.current.fallbackElement = getPrevious(
+            registry.current,
+            getOrderedFibers(fiber),
+            fiber,
+        );
+        entryRef.current.name = name;
+        entryRef.current.isActive = isActive;
+        entryRef.current.listener = listener;
+    });
 
-    return listenerId.current;
+    // registers a stable entry once
+    // biome-ignore lint/correctness/useExhaustiveDependencies: autofocus is useful only on the first render
+    useEffect(() => {
+        registry.current = register(registry.current, entryRef.current);
+
+        if (autofocus) {
+            setFocused((current) => (current ? current : entryRef.current));
+        }
+
+        return () => {
+            const [newRegistry, newFocused] = unregister(
+                registry.current,
+                focused,
+                entryRef.current.id,
+            );
+            registry.current = newRegistry;
+            setFocused(newFocused);
+        };
+    }, [registry, setFocused]);
+
+    return entryRef.current.id;
+}
+
+export function createId(): string {
+    return `${Math.random().toString(16).slice(2, 7)}`;
 }
