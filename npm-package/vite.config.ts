@@ -30,7 +30,11 @@ function stubInkDevtools(): Plugin {
 
 export default defineConfig({
     define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+        // Forced to 'development' so react/react-reconciler's dev builds get
+        // bundled instead of production ones — dev-only React internals
+        // (e.g. getOwner() on the dispatcher, read by getOwnerFiber.ts) don't
+        // exist in the production build at all. Tactical fix; see TODO.md.
+        'process.env.NODE_ENV': JSON.stringify('development'),
         'process.env.DEV': JSON.stringify('false'),
     },
     plugins: [stubInkDevtools()],
