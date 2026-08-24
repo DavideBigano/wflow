@@ -6,15 +6,20 @@ import {
 } from '../hooks/useInputListener';
 
 export interface ListenerProps extends PropsWithChildren {
-    onInput?: InputEventListener;
+    autofocus?: boolean;
     inputOptions?: UseInputListenerOptions;
+    onInput?: InputEventListener;
 }
 
 export function Listener({
-    onInput = () => {},
+    autofocus,
     inputOptions,
+    onInput = () => {},
     children,
 }: ListenerProps) {
-    useInputListener(onInput, inputOptions);
+    useInputListener(onInput, {
+        ...inputOptions,
+        autofocus: autofocus ?? inputOptions?.autofocus ?? false,
+    });
     return <>{children}</>;
 }
