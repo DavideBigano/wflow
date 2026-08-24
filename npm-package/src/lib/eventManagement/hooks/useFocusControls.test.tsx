@@ -1,236 +1,624 @@
-import { act, type PropsWithChildren, useEffect } from 'react';
-import { expect, test, vi } from 'vitest';
+import { act } from 'react';
+import { describe, expect, test } from 'vitest';
 import { renderAndAct } from '../../../testUtils/inkRenderAndAct.js';
-import {
-    type InputEventListener,
-    InputEventProvider,
-} from '../components/InputEventProvider/InputEventProvider.js';
+import { InputEventProvider } from '../components/InputEventProvider/InputEventProvider.js';
+import { FocusHarness, type FocusSpies } from '../testUtils/FocusHarness.js';
 import { Listener } from '../testUtils/Listener.js';
-import {
-    ListenerStackHarness,
-    type StackSpies,
-} from '../testUtils/ListenerStackSpy.js';
-import { type FocusControls, useFocusControls } from './useFocusControls.js';
+import type { FocusControls } from './useFocusControls.js';
 
-interface FocusControlsHarnessProps extends PropsWithChildren {
-    controlsRef?: FocusControls;
-}
+describe('focusPrev', () => {
+    test('moves focus back', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-function FocusControlsHarness({
-    controlsRef,
-    children,
-}: FocusControlsHarnessProps) {
-    const controls = useFocusControls();
-    useEffect(() => {
-        if (controlsRef) {
-            controlsRef.focus = controls.focus;
-            controlsRef.focusNext = controls.focusNext;
-            controlsRef.focusPrev = controls.focusPrev;
-        }
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list1')).toBe(true);
     });
-    return <>{children}</>;
-}
 
-function createCallTracker(calls: string[], name: string) {
-    return vi.fn(() => calls.push(name));
-}
+    test('goes in the right direction', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-test('focusPrev moves the dispatch entry point down the chain, skipping more-nested listeners', async () => {
-    const controls = {} as FocusControls;
-    const stackSpies = {} as StackSpies;
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    const { press } = await renderAndAct(
-        <InputEventProvider suppressTabNavigation>
-            <Listener inputOptions={{ name: 'list1' }} />
-            <Listener inputOptions={{ name: 'list2' }} />
-            <Listener inputOptions={{ name: 'list3' }} />
-            <Listener inputOptions={{ name: 'list4' }} />
-            <ListenerStackHarness stackSpies={stackSpies} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await act(async () => controls.focusPrev());
 
-    await act(async () => controls.focusPrev());
-    await press('x');
+        expect(spies.isFocused('list1')).toBe(true);
+    });
 
-    expect(stackSpies.getFocusedListenersNames()).toEqual([
-        'list3',
-        'list2',
-        'list1',
-    ]);
+    test('moves focus back one step', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev({ steps: 1 }));
+
+        expect(spies.isFocused('list1')).toBe(true);
+    });
+
+    test('moves focus back multiple steps', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev({ steps: 2 }));
+
+        expect(spies.isFocused('list1')).toBe(true);
+    });
+
+    test('0 steps does nothing', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev({ steps: 0 }));
+
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('multiple calls stack', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list1')).toBe(true);
+    });
+
+    test('wraps from the first listener in DFS order back to the last one', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('goes in the right direction when wrapping', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list3')).toBe(true);
+    });
+
+    test('the old element loses focus', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list2')).toBe(false);
+    });
+
+    test("elements on the way don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev({ steps: 2 }));
+
+        expect(spies.isFocused('list2')).toBe(false);
+    });
+
+    test("unrelated elements don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.isFocused('list1')).toBe(false);
+    });
+
+    test('throws for a negative steps value', async () => {
+        const controls = {} as FocusControls;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <FocusHarness focusHarnesses={controls} />
+            </InputEventProvider>,
+        );
+
+        expect(() => controls.focusPrev({ steps: -1 })).toThrow(
+            'steps must be non-negative',
+        );
+    });
+
+    test('does nothing if there are no focused listeners', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.getFocused()).toBe(null);
+    });
+
+    test('does nothing if there are no listeners', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusPrev());
+
+        expect(spies.getFocused()).toBe(null);
+    });
 });
 
-test('focusPrev({ steps: 2 }) moves back two positions', async () => {
-    const controls = {} as FocusControls;
-    const stackSpies = {} as StackSpies;
+describe('focusNext', () => {
+    test('moves focus forward', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    const { press } = await renderAndAct(
-        <InputEventProvider suppressTabNavigation>
-            <Listener inputOptions={{ name: 'list1' }} />
-            <Listener inputOptions={{ name: 'list2' }} />
-            <Listener inputOptions={{ name: 'list3' }} />
-            <Listener inputOptions={{ name: 'list4' }} />
-            <ListenerStackHarness stackSpies={stackSpies} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    await act(async () => controls.focusPrev({ steps: 2 })); // list4 -> list2
-    await press('x');
+        await act(async () => controls.focusNext());
 
-    expect(stackSpies.getFocusedListenersNames()).toEqual(['list2', 'list1']);
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('goes in the right direction', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('moves focus forward one step', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext({ steps: 1 }));
+
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('moves focus forward multiple steps', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext({ steps: 2 }));
+
+        expect(spies.isFocused('list3')).toBe(true);
+    });
+
+    test('0 steps does nothing', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext({ steps: 0 }));
+
+        expect(spies.isFocused('list2')).toBe(true);
+    });
+
+    test('multiple calls stack', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list3')).toBe(true);
+    });
+
+    test('wraps from the last listener in DFS order back to the first one', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list1')).toBe(true);
+    });
+
+    test('goes in the right direction when wrapping', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list1')).toBe(true);
+    });
+
+    test('the old element loses focus', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list1')).toBe(false);
+    });
+
+    test("elements on the way don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext({ steps: 2 }));
+
+        expect(spies.isFocused('list2')).toBe(false);
+    });
+
+    test("unrelated elements don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.isFocused('list3')).toBe(false);
+    });
+
+    test('throws for a negative steps value', async () => {
+        const controls = {} as FocusControls;
+
+        await renderAndAct(
+            <InputEventProvider>
+                <FocusHarness focusHarnesses={controls} />
+            </InputEventProvider>,
+        );
+
+        expect(() => controls.focusNext({ steps: -1 })).toThrow(
+            'steps must be non-negative',
+        );
+    });
+
+    test('does nothing if there are no focused listeners', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.getFocused()).toBe(null);
+    });
+
+    test('does nothing if there are no listeners', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
+
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
+
+        await act(async () => controls.focusNext());
+
+        expect(spies.getFocused()).toBe(null);
+    });
 });
 
-test('focusNext moves the dispatch entry point back up the chain', async () => {
-    const controls = {} as FocusControls;
-    const stackSpies = {} as StackSpies;
+describe('focus', () => {
+    test('focuses the provided element (with a focused element)', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    const { press } = await renderAndAct(
-        <InputEventProvider suppressTabNavigation>
-            <Listener inputOptions={{ name: 'list1' }} />
-            <Listener inputOptions={{ name: 'list2' }} />
-            <Listener inputOptions={{ name: 'list3' }} />
-            <Listener inputOptions={{ name: 'list4' }} />
-            <ListenerStackHarness stackSpies={stackSpies} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    await act(async () => controls.focusPrev()); // list4 -> list3
-    await act(async () => controls.focusNext()); // list3 -> list4
-    await press('x');
+        await act(async () => controls.focus('list2'));
 
-    expect(stackSpies.getFocusedListenersNames()).toEqual([
-        'list4',
-        'list3',
-        'list2',
-        'list1',
-    ]);
-});
+        expect(spies.isFocused('list2')).toBe(true);
+    });
 
-test('focusNext wraps from the most-nested listener back to the least-nested one', async () => {
-    const controls = {} as FocusControls;
-    const stackSpies = {} as StackSpies;
+    test('focused the provided element (with no focused element)', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    const { press } = await renderAndAct(
-        <InputEventProvider>
-            <Listener inputOptions={{ name: 'list1' }} />
-            <Listener inputOptions={{ name: 'list2' }} />
-            <ListenerStackHarness stackSpies={stackSpies} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    await act(async () => controls.focusNext()); // list2 -> list1
-    await press('x');
+        await act(async () => controls.focus('list1'));
 
-    expect(stackSpies.getFocusedListenersNames()).toEqual(['list1']);
-});
+        expect(spies.isFocused('list1')).toBe(true);
+    });
 
-test('focusPrev wraps from the least-nested listener back to the most-nested one', async () => {
-    const controls = {} as FocusControls;
-    const stackSpies = {} as StackSpies;
+    test('is idempotent', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    const { press } = await renderAndAct(
-        <InputEventProvider>
-            <Listener inputOptions={{ name: 'list1' }} />
-            <Listener inputOptions={{ name: 'list2' }} />
-            <ListenerStackHarness stackSpies={stackSpies} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    await act(async () => controls.focusPrev({ steps: 2 })); // list2 -> list1 -> list2
-    await press('x');
+        await act(async () => controls.focus('list1'));
+        await act(async () => controls.focus('list1'));
 
-    expect(stackSpies.getFocusedListenersNames()).toEqual(['list2', 'list1']);
-});
+        expect(spies.isFocused('list1')).toBe(true);
+    });
 
-test('stopPropagation still halts propagation from within a focused chain', async () => {
-    const calls: string[] = [];
-    const controls = {} as FocusControls;
+    test('the old element loses focus', async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    const stoppingListener: InputEventListener = (
-        _input,
-        _key,
-        stopPropagation,
-    ) => {
-        calls.push('list2');
-        stopPropagation();
-    };
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    const { press } = await renderAndAct(
-        <InputEventProvider>
-            <Listener onInput={createCallTracker(calls, 'list1')} />
-            <Listener onInput={stoppingListener} />
-            <Listener onInput={createCallTracker(calls, 'list3')} />
-            <Listener onInput={createCallTracker(calls, 'list4')} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await act(async () => controls.focus('list2'));
 
-    await act(async () => controls.focusPrev()); // list4 -> list3
-    await press('x');
+        expect(spies.isFocused('list1')).toBe(false);
+    });
 
-    expect(calls).toEqual(['list3', 'list2']);
-});
+    test("elements on the way don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-test('unmounting the focused listener falls back to full-chain dispatch', async () => {
-    const calls: string[] = [];
-    const controls = {} as FocusControls;
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    const { press, rerender } = await renderAndAct(
-        <InputEventProvider>
-            <Listener onInput={createCallTracker(calls, 'list1')} />
-            <Listener onInput={createCallTracker(calls, 'list2')} />
-            <Listener onInput={createCallTracker(calls, 'list3')} />
-            <Listener onInput={createCallTracker(calls, 'list4')} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+        await act(async () => controls.focus('list3'));
 
-    await act(async () => controls.focusPrev()); // list4 -> list3
+        expect(spies.isFocused('list2')).toBe(false);
+    });
 
-    await rerender(
-        <InputEventProvider>
-            <Listener onInput={createCallTracker(calls, 'list1')} />
-            <Listener onInput={createCallTracker(calls, 'list2')} />
-            <Listener onInput={createCallTracker(calls, 'list4')} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+    test("unrelated elements don't get focused", async () => {
+        const controls = {} as FocusControls;
+        const spies = {} as FocusSpies;
 
-    await press('x');
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} autofocus />
+                <Listener inputOptions={{ id: 'list2' }} />
+                <Listener inputOptions={{ id: 'list3' }} />
+                <FocusHarness focusHarnesses={controls} focusSpies={spies} />
+            </InputEventProvider>,
+        );
 
-    expect(calls).toEqual(['list4', 'list2', 'list1']);
-});
+        await act(async () => controls.focus('list2'));
 
-test('focusNext throws for a negative steps value', async () => {
-    const controls = {} as FocusControls;
+        expect(spies.isFocused('list3')).toBe(false);
+    });
 
-    await renderAndAct(
-        <InputEventProvider>
-            <Listener onInput={vi.fn()} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+    test('throws if the element is not found', async () => {
+        const controls = {} as FocusControls;
 
-    expect(() => controls.focusNext({ steps: -1 })).toThrow(
-        'steps must be non-negative',
-    );
-});
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <Listener inputOptions={{ id: 'list1' }} />
+                <FocusHarness focusHarnesses={controls} />
+            </InputEventProvider>,
+        );
 
-test('focusPrev throws for a negative steps value', async () => {
-    const controls = {} as FocusControls;
+        expect(() => controls.focus('missing')).toThrow(
+            'No listener found with the provided ID: missing.',
+        );
+    });
 
-    await renderAndAct(
-        <InputEventProvider>
-            <Listener onInput={vi.fn()} />
-            <FocusControlsHarness controlsRef={controls} />
-        </InputEventProvider>,
-    );
+    test('throws if there are no listeners', async () => {
+        const controls = {} as FocusControls;
 
-    expect(() => controls.focusPrev({ steps: -1 })).toThrow(
-        'steps must be non-negative',
-    );
+        await renderAndAct(
+            <InputEventProvider suppressTabNavigation>
+                <FocusHarness focusHarnesses={controls} />
+            </InputEventProvider>,
+        );
+
+        expect(() => controls.focus('missing')).toThrow(
+            'No listener found with the provided ID: missing.',
+        );
+    });
 });

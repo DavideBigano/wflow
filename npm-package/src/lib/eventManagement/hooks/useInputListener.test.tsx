@@ -1,4 +1,3 @@
-import type { PropsWithChildren } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { Keys, renderAndAct } from '../../../testUtils/inkRenderAndAct.js';
 
@@ -6,23 +5,14 @@ import {
     type InputEventListener,
     InputEventProvider,
 } from '../components/InputEventProvider/InputEventProvider.js';
-import { useInputListener } from './useInputListener.js';
-
-interface ListenerProps extends PropsWithChildren {
-    onInput?: InputEventListener;
-}
-
-function Listener({ onInput = () => {}, children }: ListenerProps) {
-    useInputListener(onInput);
-    return <>{children}</>;
-}
+import { Listener } from '../testUtils/Listener.js';
 
 describe('input and key values', () => {
     test('non special inputs provides the pressed key value in `input`', async () => {
         const onInput = vi.fn();
         const { press } = await renderAndAct(
             <InputEventProvider>
-                <Listener onInput={onInput} />
+                <Listener onInput={onInput} autofocus />
             </InputEventProvider>,
         );
 
@@ -35,7 +25,7 @@ describe('input and key values', () => {
         const onInput = vi.fn();
         const { press } = await renderAndAct(
             <InputEventProvider>
-                <Listener onInput={onInput} />
+                <Listener onInput={onInput} autofocus />
             </InputEventProvider>,
         );
 
@@ -48,7 +38,7 @@ describe('input and key values', () => {
         const onInput = vi.fn();
         const { press } = await renderAndAct(
             <InputEventProvider>
-                <Listener onInput={onInput} />
+                <Listener onInput={onInput} autofocus />
             </InputEventProvider>,
         );
 
@@ -62,7 +52,7 @@ describe('input and key values', () => {
         const onInput = vi.fn();
         const { press } = await renderAndAct(
             <InputEventProvider>
-                <Listener onInput={onInput} />
+                <Listener onInput={onInput} autofocus />
             </InputEventProvider>,
         );
 
@@ -80,7 +70,7 @@ describe('input and key values', () => {
         const onInput = vi.fn();
         const { press } = await renderAndAct(
             <InputEventProvider>
-                <Listener onInput={onInput} />
+                <Listener onInput={onInput} autofocus />
             </InputEventProvider>,
         );
 
@@ -97,21 +87,22 @@ describe('input and key values', () => {
     });
 });
 
-test('later-mounted listeners are notified before earlier-mounted ones', async () => {
+test('a more deeply nested listener is notified before its less-nested ancestors', async () => {
     const calls: string[] = [];
-    const first = vi.fn(() => calls.push('first'));
-    const second = vi.fn(() => calls.push('second'));
+    const parent = vi.fn(() => calls.push('parent'));
+    const child = vi.fn(() => calls.push('child'));
 
     const { press } = await renderAndAct(
         <InputEventProvider>
-            <Listener onInput={first} />
-            <Listener onInput={second} />
+            <Listener onInput={parent}>
+                <Listener onInput={child} autofocus />
+            </Listener>
         </InputEventProvider>,
     );
 
     await press('x');
 
-    expect(calls).toEqual(['second', 'first']);
+    expect(calls).toEqual(['child', 'parent']);
 });
 
 test('a child listener outranks its parent even when both mount in the same commit', async () => {
@@ -125,7 +116,7 @@ test('a child listener outranks its parent even when both mount in the same comm
     const { press } = await renderAndAct(
         <InputEventProvider>
             <Listener onInput={() => calls.push('parent')}>
-                <Listener onInput={() => calls.push('child')} />
+                <Listener onInput={() => calls.push('child')} autofocus />
             </Listener>
         </InputEventProvider>,
     );
@@ -135,27 +126,48 @@ test('a child listener outranks its parent even when both mount in the same comm
     expect(calls).toEqual(['child', 'parent']);
 });
 
-test('stopPropagation prevents earlier-mounted listeners from being notified', async () => {
+test('a previous sibling receives the event when the focused one does not stop it', async () => {
     const calls: string[] = [];
-    const first = () => calls.push('first');
-    const second: InputEventListener = (_input, _key, stop) => {
-        calls.push('second');
-        stop();
-    };
+    const first = vi.fn(() => calls.push('first'));
+    const second = vi.fn(() => calls.push('second'));
 
     const { press } = await renderAndAct(
         <InputEventProvider>
             <Listener onInput={first} />
-            <Listener onInput={second} />
+            <Listener onInput={second} autofocus />
         </InputEventProvider>,
     );
 
     await press('x');
 
-    expect(calls).toEqual(['second']);
+    expect(calls).toEqual(['second', 'first']);
 });
 
-test('unmounting a listener removes it from the stack', async () => {
+test('stopPropagation prevents less-nested ancestors from being notified', async () => {
+    const calls: string[] = [];
+    const outer = () => calls.push('outer');
+    const stopping: InputEventListener = (_input, _key, stopPropagation) => {
+        calls.push('stopping');
+        stopPropagation();
+    };
+    const innermost = () => calls.push('innermost');
+
+    const { press } = await renderAndAct(
+        <InputEventProvider>
+            <Listener onInput={outer}>
+                <Listener onInput={stopping}>
+                    <Listener onInput={innermost} autofocus />
+                </Listener>
+            </Listener>
+        </InputEventProvider>,
+    );
+
+    await press('x');
+
+    expect(calls).toEqual(['innermost', 'stopping']);
+});
+
+test('unmounting a listener removes it from the registry', async () => {
     const onInput = vi.fn(() => {});
     const { press, rerender } = await renderAndAct(
         <InputEventProvider>
@@ -179,28 +191,30 @@ test('useInputListener throws when used outside an InputEventProvider', async ()
     );
 });
 
-test('a listener keeps its mount-order priority even after its own handler identity changes on rerender', async () => {
+test('a listener keeps its ancestry-based priority even after its own handler identity changes on rerender', async () => {
     const calls: string[] = [];
 
-    const second = () => calls.push('second');
+    const child = () => calls.push('child');
 
     const { rerender, press } = await renderAndAct(
         <InputEventProvider>
-            <Listener onInput={() => calls.push('first')} />
-            <Listener onInput={second} />
+            <Listener onInput={() => calls.push('parent')}>
+                <Listener onInput={child} autofocus />
+            </Listener>
         </InputEventProvider>,
     );
 
     await rerender(
         <InputEventProvider>
-            <Listener onInput={() => calls.push('newFirst')} />
-            <Listener onInput={second} />
+            <Listener onInput={() => calls.push('newParent')}>
+                <Listener onInput={child} />
+            </Listener>
         </InputEventProvider>,
     );
 
     await press('x');
 
-    expect(calls).toEqual(['second', 'newFirst']);
+    expect(calls).toEqual(['child', 'newParent']);
 });
 
 test('a listener always calls its latest handler, even though it only registers once', async () => {
@@ -208,7 +222,7 @@ test('a listener always calls its latest handler, even though it only registers 
 
     const { rerender, press } = await renderAndAct(
         <InputEventProvider>
-            <Listener onInput={() => calls.push('v1')} />
+            <Listener onInput={() => calls.push('v1')} autofocus />
         </InputEventProvider>,
     );
 
@@ -223,20 +237,17 @@ test('a listener always calls its latest handler, even though it only registers 
     expect(calls).toEqual(['v2']);
 });
 
-test('isActive: false skips a listener without removing its place in the chain', async () => {
+test('isActive: false skips a listener without removing its place in the ancestry chain', async () => {
     const calls: string[] = [];
 
-    function ToggleableListener({ isActive }: { isActive: boolean }) {
-        useInputListener(() => calls.push('toggleable'), { isActive });
-        return null;
-    }
-
-    const later = () => calls.push('later');
+    const toggleable = () => calls.push('toggleable');
+    const child = () => calls.push('child');
 
     const { rerender, press } = await renderAndAct(
         <InputEventProvider>
-            <ToggleableListener isActive={true} />
-            <Listener onInput={later} />
+            <Listener onInput={toggleable} inputOptions={{ isActive: true }}>
+                <Listener onInput={child} autofocus />
+            </Listener>
         </InputEventProvider>,
     );
 
@@ -244,12 +255,18 @@ test('isActive: false skips a listener without removing its place in the chain',
 
     await rerender(
         <InputEventProvider>
-            <ToggleableListener isActive={false} />
-            <Listener onInput={later} />
+            <Listener onInput={toggleable} inputOptions={{ isActive: false }}>
+                <Listener onInput={child} />
+            </Listener>
         </InputEventProvider>,
     );
 
     await press('x');
 
-    expect(calls).toEqual(['later', 'toggleable', 'later']);
+    expect(calls).toEqual(['child', 'toggleable', 'child']);
 });
+
+/* 
+test('stopPropagation halts propagation', async () => {});
+
+test('unmounting the focused listener falls back to the previous entry', async () => {}); */

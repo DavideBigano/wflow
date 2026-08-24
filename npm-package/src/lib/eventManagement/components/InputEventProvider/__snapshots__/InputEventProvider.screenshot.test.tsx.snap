@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InputEventProvider > children fill the remaining width up to the devtools panel 1`] = `
+"┌───────────────────────────────────────────────────────────────────────────────┐┌─────────────────┐
+│Hello                                                                          ││ Input Listeners │
+│                                                                               ││─────────────────│
+│                                                                               ││ › 1. Listener   │
+└───────────────────────────────────────────────────────────────────────────────┘└─────────────────┘"
+`;
+
+exports[`InputEventProvider > renders children with no devtools panel by default 1`] = `"Hello"`;
+
+exports[`InputEventProvider > renders the devtools panel alongside children when showDevtools is true 1`] = `
+"Hello                                                                            ┌─────────────────┐
+                                                                                 │ Input Listeners │
+                                                                                 │─────────────────│
+                                                                                 │ › 1. Listener   │
+                                                                                 └─────────────────┘"
+`;

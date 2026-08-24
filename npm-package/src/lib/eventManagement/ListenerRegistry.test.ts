@@ -2,14 +2,14 @@ import { describe, expect, test, vi } from 'vitest';
 import {
     type FiberNode,
     findRoot,
-    focus,
+    getDispatchChain,
+    getElement,
     getFirst,
     getLast,
+    getMovedFocus,
     getNext,
     getOrderedFibers,
     getPrevious,
-    type ListenerRegistry,
-    moveFocus,
     type RegistryElement,
     register,
     unregister,
@@ -29,8 +29,19 @@ function attachSibling(fiber: FiberNode, sibling: FiberNode): void {
     sibling.return = fiber.return;
 }
 
-function createElement(id: string, fiber?: FiberNode): RegistryElement {
-    return { id, name: null, fiber: fiber || createFiber(), listener: vi.fn() };
+function createElement(
+    id: string,
+    fiber?: FiberNode,
+    fallbackElement: RegistryElement | null = null,
+): RegistryElement {
+    return {
+        id,
+        name: null,
+        fiber: fiber || createFiber(),
+        fallbackElement,
+        listener: vi.fn(),
+        isActive: true,
+    };
 }
 
 /**
@@ -96,79 +107,47 @@ function createTreeWithGaps() {
 describe('register', () => {
     test('adds the new entry to listeners', () => {
         const one = createElement('one', createFiber());
-        const registry: ListenerRegistry = { listeners: [one], focused: null };
+        const registry: readonly RegistryElement[] = [one];
         const two = createElement('two', createFiber());
 
         const result = register(registry, two);
 
-        expect(result.listeners).toEqual([one, two]);
+        expect(result).toEqual([one, two]);
     });
 
-    test('adds the new entry to an empty elements array', () => {
-        const registry: ListenerRegistry = { listeners: [], focused: null };
+    test('adds the new entry to an empty registry', () => {
+        const registry: readonly RegistryElement[] = [];
         const element = createElement('one', createFiber());
 
         const result = register(registry, element);
 
-        expect(result.listeners).toEqual([element]);
-    });
-
-    test('does not change focused', () => {
-        const focused = createElement('focused', createFiber());
-        const registry: ListenerRegistry = { listeners: [focused], focused };
-
-        const result = register(registry, createElement('two', createFiber()));
-
-        expect(result.focused).toBe(focused);
-    });
-
-    test('does not set focused', () => {
-        const one = createElement('one', createFiber());
-        const registry: ListenerRegistry = { listeners: [one], focused: null };
-
-        const two = createElement('two', createFiber());
-
-        const result = register(registry, two);
-
-        expect(result.focused).toBeNull();
-    });
-
-    test('does not set focused on an empty elements array', () => {
-        const element = createElement('focused', createFiber());
-        const registry: ListenerRegistry = { listeners: [], focused: null };
-
-        const result = register(registry, element);
-
-        expect(result.focused).toBeNull();
+        expect(result).toEqual([element]);
     });
 });
 
 describe('unregister', () => {
     test('removes the entry with the given id', () => {
         const one = createElement('one');
-        const registry: ListenerRegistry = { listeners: [one], focused: null };
+        const registry: readonly RegistryElement[] = [one];
 
-        const result = unregister(registry, 'one');
+        const [result] = unregister(registry, null, 'one');
 
-        expect(result.listeners).toEqual([]);
+        expect(result).toEqual([]);
     });
 
     test('throws when the id is not registered', () => {
         const notMissing = createElement('notMissing');
-        const registry: ListenerRegistry = {
-            listeners: [notMissing],
-            focused: null,
-        };
+        const registry: readonly RegistryElement[] = [notMissing];
 
-        expect(() => unregister(registry, 'missing')).toThrow(
+        expect(() => unregister(registry, null, 'missing')).toThrow(
             'No listener found with the provided ID: missing.',
         );
     });
 
-    test('throws on an empty elements array', () => {
-        const registry: ListenerRegistry = { listeners: [], focused: null };
+    test('throws on an empty registry', () => {
+        const registry: readonly RegistryElement[] = [];
 
-        expect(() => unregister(registry, 'missing')).toThrow(
+        expect(() => unregister(registry, null, 'missing')).toThrow(
             'No listener found with the provided ID: missing.',
         );
     });
@@ -177,96 +156,146 @@ describe('unregister', () => {
         const { a, b } = createTree();
         const focused = createElement('focused', a);
         const other = createElement('unfocused', b);
-        const registry: ListenerRegistry = {
-            listeners: [focused, other],
-            focused,
-        };
+        const registry: readonly RegistryElement[] = [focused, other];
 
-        const result = unregister(registry, 'unfocused');
+        const [, resultFocused] = unregister(registry, focused, 'unfocused');
 
-        expect(result.focused).toBe(focused);
+        expect(resultFocused).toBe(focused);
     });
 
     test('leaves focused unchanged if it was null', () => {
         const { a, b } = createTree();
         const one = createElement('one', a);
         const two = createElement('two', b);
-        const registry: ListenerRegistry = {
-            listeners: [one, two],
-            focused: null,
-        };
+        const registry: readonly RegistryElement[] = [one, two];
 
-        const result = unregister(registry, 'two');
+        const [, resultFocused] = unregister(registry, null, 'two');
 
-        expect(result.focused).toBeNull();
+        expect(resultFocused).toBeNull();
     });
 
-    test('falls back to the previous entry in render order when the removed entry was focused', () => {
-        const { a, b } = createTree();
+    test('a detached removed fiber does not prevent fallbackElement from resolving', () => {
+        // simulates React nulling the removed entry's own fiber links once
+        // its unmount cleanup runs
+        const { a } = createTree();
         const one = createElement('one', a);
-        const two = createElement('two', b);
-        const registry: ListenerRegistry = {
-            listeners: [one, two],
-            focused: two,
-        };
+        const two = createElement('two', createFiber(), one);
+        const registry: readonly RegistryElement[] = [one, two];
 
-        const result = unregister(registry, 'two');
+        const [, resultFocused] = unregister(registry, two, 'two');
 
-        expect(result.focused).toBe(one);
+        expect(resultFocused).toBe(one);
     });
 
-    test('wraps to the last entry when the removed, focused entry was first in render order', () => {
-        const { a, b } = createTree();
-        const one = createElement('one', a);
-        const two = createElement('two', b);
-        const registry: ListenerRegistry = {
-            listeners: [one, two],
-            focused: one,
-        };
+    describe('registered fallbackElement', () => {
+        test('falls back to fallbackElement', () => {
+            const { a, b } = createTree();
+            const one = createElement('one', a);
+            const two = createElement('two', b, one);
+            const registry: readonly RegistryElement[] = [one, two];
 
-        const result = unregister(registry, 'one');
+            const [, resultFocused] = unregister(registry, two, 'two');
 
-        expect(result.focused).toBe(two);
+            expect(resultFocused).toBe(one);
+        });
+    });
+
+    describe('null fallbackElement', () => {
+        test('ignores null fallbackElements', () => {
+            const { a, b } = createTree();
+            const one = createElement('one', a);
+            const two = createElement('two', b, null);
+            const registry: readonly RegistryElement[] = [one, two];
+
+            const [, resultFocused] = unregister(registry, one, 'two');
+
+            expect(resultFocused).toBe(one);
+        });
+
+        test('falls back to the first entry in tree order', () => {
+            const { a, a1, b } = createTree();
+            const one = createElement('one', a);
+            const two = createElement('two', a1);
+            const three = createElement('three', b, null);
+            const registry: readonly RegistryElement[] = [one, two, three];
+
+            const [, resultFocused] = unregister(registry, three, 'three');
+
+            expect(resultFocused).toBe(one);
+        });
+    });
+
+    describe('unregistered fallbackElement', () => {
+        test('ignores unregistered fallbackElements', () => {
+            const { a, b } = createTree();
+            const unregistered = createElement('unregistered');
+            const one = createElement('one', a);
+            const two = createElement('two', b, unregistered);
+            const registry: readonly RegistryElement[] = [one, two];
+
+            const [, resultFocused] = unregister(registry, one, 'two');
+
+            expect(resultFocused).toBe(one);
+        });
+
+        test('falls back to the first entry in tree order', () => {
+            const { a, a1, b } = createTree();
+            const unregistered = createElement('unregistered');
+            const one = createElement('one', a);
+            const two = createElement('two', a1);
+            const three = createElement('three', b, unregistered);
+            const registry: readonly RegistryElement[] = [one, two, three];
+
+            const [, resultFocused] = unregister(registry, three, 'three');
+
+            expect(resultFocused).toBe(one);
+        });
+
+        test("walks multiple unregistered nodes until it gets a valid one, even if it's not the first", () => {
+            const { root, a, b } = createTree();
+            const zero = createElement('root', root);
+            const one = createElement('one', a);
+            const unregistered1 = createElement(
+                'unregistered1',
+                createFiber(),
+                one,
+            );
+            const unregistered2 = createElement(
+                'unregistered2',
+                createFiber(),
+                unregistered1,
+            );
+            const two = createElement('two', b, unregistered2);
+            const registry: readonly RegistryElement[] = [zero, one, two];
+
+            const [, resultFocused] = unregister(registry, two, 'two');
+
+            expect(resultFocused).toBe(one);
+        });
     });
 });
 
-describe('focus', () => {
-    test('focuses the entry with the given id', () => {
+describe('getElement', () => {
+    test('returns the entry with the given id', () => {
         const one = createElement('one', createFiber());
-        const registry: ListenerRegistry = { listeners: [one], focused: null };
+        const registry: readonly RegistryElement[] = [one];
 
-        const result = focus(registry, 'one');
-
-        expect(result.focused).toBe(one);
-    });
-
-    test('is idempotent', () => {
-        const one = createElement('one', createFiber());
-        const registry: ListenerRegistry = { listeners: [one], focused: null };
-
-        const firstResult = focus(registry, 'one');
-        expect(firstResult.focused).toBe(one);
-
-        const secondResult = focus(registry, 'one');
-        expect(secondResult.focused).toBe(one);
+        expect(getElement(registry, 'one')).toBe(one);
     });
 
     test('throws when id is not registered', () => {
         const element = createElement('notMissing', createFiber());
-        const registry: ListenerRegistry = {
-            listeners: [element],
-            focused: null,
-        };
+        const registry: readonly RegistryElement[] = [element];
 
-        expect(() => focus(registry, 'missing')).toThrow(
+        expect(() => getElement(registry, 'missing')).toThrow(
             'No listener found with the provided ID: missing.',
         );
     });
 
     test('throws when there are no listeners', () => {
-        const registry: ListenerRegistry = { listeners: [], focused: null };
+        const registry: readonly RegistryElement[] = [];
 
-        expect(() => focus(registry, 'missing')).toThrow(
+        expect(() => getElement(registry, 'missing')).toThrow(
             'No listener found with the provided ID: missing.',
         );
     });
@@ -329,6 +358,59 @@ describe('getPrevious', () => {
         expect(getPrevious(listeners, orderedFibers, b)?.id).toBe('a2');
     });
 
+    test('returns the left sibling', () => {
+        const { a1, a2, b } = createTree();
+        const listeners = [createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test('returns the parent', () => {
+        const { a, a2, b } = createTree();
+        const listeners = [createElement('a', a)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a');
+    });
+
+    test('returns the closest left sibling, even with a gap', () => {
+        const { a1, a2 } = createTree();
+        const gap = createFiber();
+        attachSibling(a1, gap);
+        attachSibling(gap, a2);
+        const listeners = [createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test('returns the closest ancestor, even with a gap', () => {
+        const { a, b } = createTreeWithGaps();
+        const listeners = [createElement('a', a)];
+        const orderedFibers = getOrderedFibers(b);
+
+        expect(getPrevious(listeners, orderedFibers, b)?.id).toBe('a');
+    });
+
+    test('a left sibling beats a parent or ancestor', () => {
+        const { a, a1, a2 } = createTree();
+        const listeners = [createElement('a', a), createElement('a1', a1)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a1');
+    });
+
+    test("a left sibling's child beats the left sibling", () => {
+        const { a1, a2 } = createTree();
+        const a11 = createFiber();
+        attachChild(a1, a11);
+        const listeners = [createElement('a1', a1), createElement('a11', a11)];
+        const orderedFibers = getOrderedFibers(a2);
+
+        expect(getPrevious(listeners, orderedFibers, a2)?.id).toBe('a11');
+    });
+
     test('returns null when `from` is first in render order', () => {
         const { a, a2, b } = createTree();
         const listeners = [createElement('a2', a2), createElement('b', b)];
@@ -384,101 +466,82 @@ describe('getNext', () => {
     });
 });
 
-describe('moveFocus', () => {
+describe('getMovedFocus', () => {
     test('steps focus forward by one', () => {
         const { a2, b } = createTree();
         const first = createElement('a2', a2);
         const second = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, second],
-            focused: first,
-        };
+        const registry: readonly RegistryElement[] = [first, second];
 
-        const result = moveFocus(registry, 1);
+        const result = getMovedFocus(registry, first, 1);
 
-        expect(result.focused).toBe(second);
+        expect(result).toBe(second);
     });
 
-    test('steps focus forward by two, actually advancing twice', () => {
+    test('steps focus forward by two', () => {
         const { a1, a2, b } = createTree();
         const first = createElement('a1', a1);
         const second = createElement('a2', a2);
         const third = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, second, third],
-            focused: first,
-        };
+        const registry: readonly RegistryElement[] = [first, second, third];
 
-        const result = moveFocus(registry, 2);
+        const result = getMovedFocus(registry, first, 2);
 
-        expect(result.focused).toBe(third);
+        expect(result).toBe(third);
     });
 
     test('wraps focus to the first entry when stepping forward past the last', () => {
         const { a2, b } = createTree();
         const first = createElement('a2', a2);
         const last = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, last],
-            focused: last,
-        };
+        const registry: readonly RegistryElement[] = [first, last];
 
-        const result = moveFocus(registry, 1);
+        const result = getMovedFocus(registry, last, 1);
 
-        expect(result.focused).toBe(first);
+        expect(result).toBe(first);
     });
 
     test('steps focus backward', () => {
         const { a2, b } = createTree();
         const first = createElement('a2', a2);
         const second = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, second],
-            focused: second,
-        };
+        const registry: readonly RegistryElement[] = [first, second];
 
-        const result = moveFocus(registry, -1);
+        const result = getMovedFocus(registry, second, -1);
 
-        expect(result.focused).toBe(first);
+        expect(result).toBe(first);
     });
 
     test('wraps focus to the last entry when stepping backward past the first', () => {
         const { a2, b } = createTree();
         const first = createElement('a2', a2);
         const last = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, last],
-            focused: first,
-        };
+        const registry: readonly RegistryElement[] = [first, last];
 
-        const result = moveFocus(registry, -1);
+        const result = getMovedFocus(registry, first, -1);
 
-        expect(result.focused).toBe(last);
+        expect(result).toBe(last);
     });
 
     test('is a no-op when steps is 0', () => {
         const { a2, b } = createTree();
         const first = createElement('a2', a2);
         const second = createElement('b', b);
-        const registry: ListenerRegistry = {
-            listeners: [first, second],
-            focused: first,
-        };
+        const registry: readonly RegistryElement[] = [first, second];
 
-        const result = moveFocus(registry, 0);
+        const result = getMovedFocus(registry, first, 0);
 
-        expect(result.focused).toBe(first);
+        expect(result).toBe(first);
     });
 
     test('is a no-op when nothing is focused', () => {
-        const registry: ListenerRegistry = {
-            listeners: [createElement('a', createFiber())],
-            focused: null,
-        };
+        const registry: readonly RegistryElement[] = [
+            createElement('a', createFiber()),
+        ];
 
-        const result = moveFocus(registry, 1);
+        const result = getMovedFocus(registry, null, 1);
 
-        expect(result.focused).toBeNull();
+        expect(result).toBeNull();
     });
 });
 
@@ -493,6 +556,75 @@ describe('findRoot', () => {
         const { root } = createTree();
 
         expect(findRoot(root)).toBe(root);
+    });
+});
+
+describe('getDispatchChain', () => {
+    test('returns an empty array when nothing is focused', () => {
+        const registry: readonly RegistryElement[] = [];
+
+        expect(getDispatchChain(registry, null)).toEqual([]);
+    });
+
+    test('returns just the focused entry when nothing precedes it in DFS order', () => {
+        const { root } = createTree();
+        const focused = createElement('root', root);
+        const registry: readonly RegistryElement[] = [focused];
+
+        expect(getDispatchChain(registry, focused)).toEqual([focused]);
+    });
+
+    test('includes a left sibling', () => {
+        const { a1, a2 } = createTree();
+        const sibling = createElement('a1', a1);
+        const focused = createElement('a2', a2);
+        const registry: readonly RegistryElement[] = [sibling, focused];
+
+        expect(getDispatchChain(registry, focused)).toEqual([focused, sibling]);
+    });
+
+    test('includes a parent', () => {
+        const { a, a2 } = createTree();
+        const ancestor = createElement('a', a);
+        const focused = createElement('a2', a2);
+        const registry: readonly RegistryElement[] = [ancestor, focused];
+
+        expect(getDispatchChain(registry, focused)).toEqual([
+            focused,
+            ancestor,
+        ]);
+    });
+
+    test('includes a left sibling then a parent', () => {
+        const { a, a1, a2 } = createTree();
+        const parent = createElement('a', a);
+        const sibling = createElement('a1', a1);
+        const focused = createElement('a2', a2);
+        const registry: readonly RegistryElement[] = [parent, sibling, focused];
+
+        expect(getDispatchChain(registry, focused)).toEqual([
+            focused,
+            sibling,
+            parent,
+        ]);
+    });
+
+    test('no wrap', () => {
+        const { a1, b } = createTree();
+        const focused = createElement('a1', a1);
+        const after = createElement('b', b);
+        const registry: readonly RegistryElement[] = [focused, after];
+
+        expect(getDispatchChain(registry, focused)).toEqual([focused]);
+    });
+
+    test('walks past unregistered fibers to reach a more distant previous entry', () => {
+        const { a, b } = createTreeWithGaps();
+        const distant = createElement('a', a);
+        const focused = createElement('b', b);
+        const registry: readonly RegistryElement[] = [distant, focused];
+
+        expect(getDispatchChain(registry, focused)).toEqual([focused, distant]);
     });
 });
 

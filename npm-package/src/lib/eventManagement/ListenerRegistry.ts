@@ -7,7 +7,7 @@ import type { InputEventListener } from './components/InputEventProvider/InputEv
  * Confirmed this against react@19.2.8.
  */
 export interface FiberNode {
-    /** Parent fiber — walked to resolve dispatch ancestry and pre-order predecessors. */
+    /** Parent fiber — walked by `findRoot` to reach the tree root before a DFS traversal. */
     return: FiberNode | null;
     /** First child fiber — walked to resolve pre-order successors. */
     child: FiberNode | null;
@@ -20,74 +20,80 @@ export interface RegistryElement {
     name: string | null;
     /** Refreshed every render via `getOwner()` — never cached across renders, since fibers double-buffer. Cleared to `null` in the owning hook's unmount effect. */
     fiber: FiberNode;
+    /**
+     * Reference to the previous registry element in DFS order. Stored for
+     * listener unregistration because that procedure happens when the newly
+     * rendered tree has already been committed and thus the fiber's pointers
+     * have already been set to `null` (this applies only for unmounted
+     * components). Refreshed every render alongside.
+     */
+    fallbackElement: RegistryElement | null;
     listener: InputEventListener;
-}
-
-export interface ListenerRegistry {
-    readonly listeners: ReadonlyArray<RegistryElement>;
-    readonly focused: RegistryElement | null;
+    isActive: boolean;
 }
 
 /**
  * Registers an entry.
  */
 export function register(
-    registry: ListenerRegistry,
+    registry: readonly RegistryElement[],
     listener: RegistryElement,
-): ListenerRegistry {
-    return {
-        listeners: [...registry.listeners, listener],
-        focused: registry.focused,
-    };
+): readonly RegistryElement[] {
+    return [...registry, listener];
 }
 
 /**
  * Removes the entry matching the provided `listenerId`. If that was focused,
- * falls back to the previous entry, wrapping around.
+ * falls back to its `fallbackElement` if still registered, otherwise to the
+ * first remaining entry in tree order.
  * @throws if `listenerId` isn't registered.
  */
 export function unregister(
-    registry: ListenerRegistry,
+    registry: readonly RegistryElement[],
+    focused: RegistryElement | null,
     listenerId: string,
-): ListenerRegistry {
-    const removed = registry.listeners.find((l) => l.id === listenerId);
+): [registry: readonly RegistryElement[], focused: RegistryElement | null] {
+    const removed = registry.find((l) => l.id === listenerId);
     if (!removed) {
         throw new Error(
             `No listener found with the provided ID: ${listenerId}.`,
         );
     }
 
-    const listeners = registry.listeners.filter((l) => l.id !== listenerId);
+    const newRegistry = registry.filter((l) => l !== removed);
 
-    if (registry.focused?.id !== listenerId) {
-        return { listeners, focused: registry.focused };
+    if (focused?.id !== listenerId) {
+        return [newRegistry, focused];
     }
 
-    const orderedFibers = getOrderedFibers(registry.focused.fiber);
+    // checks that `fallbackElement` is a registered element
+    let newFocused = focused.fallbackElement;
+    while (newFocused && newRegistry.indexOf(newFocused) < 0) {
+        newFocused = newFocused.fallbackElement;
+    }
 
-    const focused =
-        // using old registry as we need to find the removed listener's fiber to
-        // get the previous one
-        getPrevious(registry.listeners, orderedFibers, removed.fiber) ??
-        getLast(listeners, orderedFibers);
-    return { listeners, focused };
+    return [
+        newRegistry,
+        newFocused ??
+            getFirst(newRegistry, getOrderedFibers(newRegistry[0].fiber)),
+    ];
 }
 
 /**
- * Focuses the entry matching the provided `listenerId`.
+ * Returns the registry entry matching the provided `listenerId`.
  * @throws if `listenerId` isn't registered.
  */
-export function focus(
-    registry: ListenerRegistry,
+export function getElement(
+    registry: readonly RegistryElement[],
     listenerId: string,
-): ListenerRegistry {
-    const target = registry.listeners.find((l) => l.id === listenerId);
+): RegistryElement {
+    const target = registry.find((l) => l.id === listenerId);
     if (!target) {
         throw new Error(
             `No listener found with the provided ID: ${listenerId}.`,
         );
     }
-    return { listeners: registry.listeners, focused: target };
+    return target;
 }
 
 /**
@@ -95,7 +101,7 @@ export function focus(
  * Returns null if none is found.
  */
 export function getFirst(
-    listeners: ReadonlyArray<RegistryElement>,
+    listeners: readonly RegistryElement[],
     orderedFibers: FiberNode[],
 ): RegistryElement | null {
     for (const fiber of orderedFibers) {
@@ -113,7 +119,7 @@ export function getFirst(
  * Returns null if none is found.
  */
 export function getLast(
-    listeners: ReadonlyArray<RegistryElement>,
+    listeners: readonly RegistryElement[],
     orderedFibers: FiberNode[],
 ): RegistryElement | null {
     for (let i = orderedFibers.length - 1; i >= 0; i--) {
@@ -132,7 +138,7 @@ export function getLast(
  * Returns null if none is found.
  */
 export function getPrevious(
-    listeners: ReadonlyArray<RegistryElement>,
+    listeners: readonly RegistryElement[],
     orderedFibers: FiberNode[],
     from: FiberNode,
 ): RegistryElement | null {
@@ -152,7 +158,7 @@ export function getPrevious(
  * Returns null if none is found.
  */
 export function getNext(
-    listeners: ReadonlyArray<RegistryElement>,
+    listeners: readonly RegistryElement[],
     orderedFibers: FiberNode[],
     from: FiberNode,
 ): RegistryElement | null {
@@ -168,41 +174,65 @@ export function getNext(
 }
 
 /**
- * Moves focus by `steps` provided. Positive `steps` move "next", negative ones
- * move "previous". Wraps around the listener tree. Does nothing if no listener
- * is focused.
+ * Calculates a focus movement by `steps` provided. Positive `steps` move "next",
+ * negative ones move "previous". Wraps around the listener tree. Does nothing if
+ * no listener is focused.
  */
-export function moveFocus(
-    registry: ListenerRegistry,
+export function getMovedFocus(
+    registry: readonly RegistryElement[],
+    focused: RegistryElement | null,
     steps: number,
-): ListenerRegistry {
-    if (!registry.focused || steps === 0) {
-        return registry;
+): RegistryElement | null {
+    if (!focused || steps === 0) {
+        return focused;
     }
 
-    const listeners = registry.listeners;
-    if (listeners.length === 0) {
-        return registry;
+    if (registry.length === 0) {
+        return null;
     }
 
-    const orderedFibers = getOrderedFibers(listeners[0].fiber);
+    const orderedFibers = getOrderedFibers(registry[0].fiber);
 
     const direction: 'prev' | 'next' = steps < 0 ? 'prev' : 'next';
-    let focused: RegistryElement = registry.focused;
+    let newFocused: RegistryElement = focused;
     for (let i = 0; i < Math.abs(steps); i++) {
-        focused =
+        newFocused =
             direction === 'prev'
-                ? // listeners is non-empty here, so these fallbacks never actually
+                ? // registry is non-empty here, so these fallbacks never actually
                   // resolve to focused — they exist only to satisfy the nullable
                   // return type.
-                  (getPrevious(listeners, orderedFibers, focused.fiber) ??
-                  getLast(listeners, orderedFibers) ??
-                  focused)
-                : (getNext(listeners, orderedFibers, focused.fiber) ??
-                  getFirst(listeners, orderedFibers) ??
-                  focused);
+                  (getPrevious(registry, orderedFibers, newFocused.fiber) ??
+                  getLast(registry, orderedFibers) ??
+                  newFocused)
+                : (getNext(registry, orderedFibers, newFocused.fiber) ??
+                  getFirst(registry, orderedFibers) ??
+                  newFocused);
     }
-    return { listeners: registry.listeners, focused };
+    return newFocused;
+}
+
+/**
+ * The focused listener, then each registered entry before it in DFS
+ * order without wrapping. Empty if nothing is focused.
+ */
+export function getDispatchChain(
+    registry: readonly RegistryElement[],
+    focused: RegistryElement | null,
+): RegistryElement[] {
+    if (!focused) {
+        return [];
+    }
+
+    const orderedFibers = getOrderedFibers(focused.fiber);
+
+    const chain: RegistryElement[] = [];
+    let current: RegistryElement | null = focused;
+    do {
+        chain.push(current);
+        current = getPrevious(registry, orderedFibers, current.fiber);
+    } while (current);
+
+    return chain;
 }
 
 /** Walks up the fiber tree to the root via `.return`. */
@@ -243,4 +273,14 @@ export function _getOrderedFibers(fiber: FiberNode): FiberNode[] {
     }
 
     return ordered;
+}
+
+/**
+ * Finds {@link element} inside {@link listeners}. Returns `null` on fail.
+ */
+export function findElement(
+    listeners: RegistryElement[],
+    element: RegistryElement,
+): RegistryElement | null {
+    return listeners.find((listener) => listener === element) || null;
 }
