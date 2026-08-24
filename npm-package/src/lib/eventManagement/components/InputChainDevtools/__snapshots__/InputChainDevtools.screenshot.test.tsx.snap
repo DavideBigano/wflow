@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`InputChainDevtools highlights the focused entry 1`] = `
+exports[`InputChainDevtools > highlights the focused entry 1`] = `
 "┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Input Listeners                                                                                  │
 │──────────────────────────────────────────────────────────────────────────────────────────────────│
@@ -10,7 +10,7 @@ exports[`InputChainDevtools highlights the focused entry 1`] = `
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘"
 `;
 
-exports[`InputChainDevtools lists entries lowest-sequence (lowest priority) first 1`] = `
+exports[`InputChainDevtools > lists entries in the order given 1`] = `
 "┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Input Listeners                                                                                  │
 │──────────────────────────────────────────────────────────────────────────────────────────────────│
@@ -20,7 +20,7 @@ exports[`InputChainDevtools lists entries lowest-sequence (lowest priority) firs
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘"
 `;
 
-exports[`InputChainDevtools renders an empty-state placeholder with no entries 1`] = `
+exports[`InputChainDevtools > renders an empty-state placeholder with no entries 1`] = `
 "┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Input Listeners                                                                                  │
 │──────────────────────────────────────────────────────────────────────────────────────────────────│
