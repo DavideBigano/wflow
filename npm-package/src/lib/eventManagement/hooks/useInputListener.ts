@@ -53,6 +53,7 @@ export function useInputListener(
 
     const fiber = getOwnerFiber();
 
+    const focusedRef = useRef(focused);
     const entryRef = useRef<RegistryElement>({
         id,
         name,
@@ -63,16 +64,10 @@ export function useInputListener(
         focusable,
     });
 
-    // kept live every render so the registration effect's cleanup (which
-    // only runs once, on unmount) can read the current focus instead of
-    // whatever was focused on the component's first render.
-    const focusedRef = useRef(focused);
-    useEffect(() => {
-        focusedRef.current = focused;
-    });
-
     // updated most of the entrie's data on every render
     useEffect(() => {
+        focusedRef.current = focused;
+
         entryRef.current.fiber = fiber;
         entryRef.current.fallbackElement = getPrevious(
             registry.current,
