@@ -20,7 +20,10 @@ describe('InputEventProvider', () => {
     test('renders the devtools panel alongside children when showDevtools is true', async () => {
         const { lastFrame } = await renderAndAct(
             <InputEventProvider showDevtools>
-                <Listener inputOptions={{ id: 'list1', name: 'Listener' }} autofocus>
+                <Listener
+                    inputOptions={{ id: 'list1', name: 'Listener' }}
+                    autofocus
+                >
                     <Text>Hello</Text>
                 </Listener>
             </InputEventProvider>,
@@ -32,7 +35,10 @@ describe('InputEventProvider', () => {
     test('children fill the remaining width up to the devtools panel', async () => {
         const { lastFrame } = await renderAndAct(
             <InputEventProvider showDevtools>
-                <Listener inputOptions={{ id: 'list1', name: 'Listener' }} autofocus>
+                <Listener
+                    inputOptions={{ id: 'list1', name: 'Listener' }}
+                    autofocus
+                >
                     <Box borderStyle="single" width="100%">
                         <Text>Hello</Text>
                     </Box>

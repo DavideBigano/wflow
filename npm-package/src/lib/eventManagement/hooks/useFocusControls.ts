@@ -56,7 +56,14 @@ export function useFocusControls(): FocusControls {
     );
     const focusById: (listenerId: string) => void = useCallback(
         (listenerId: string) => {
-            setFocused(getElement(registry.current, listenerId));
+            const candidate = getElement(registry.current, listenerId);
+            if (candidate.focusable) {
+                setFocused(candidate);
+            } else {
+                throw new Error(
+                    `Cannot focus a non-focusable listener. ID: ${listenerId}`,
+                );
+            }
         },
         [registry, setFocused],
     );

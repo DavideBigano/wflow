@@ -30,6 +30,7 @@ export interface RegistryElement {
     fallbackElement: RegistryElement | null;
     listener: InputEventListener;
     isActive: boolean;
+    focusable: boolean;
 }
 
 /**
@@ -66,17 +67,21 @@ export function unregister(
         return [newRegistry, focused];
     }
 
-    // checks that `fallbackElement` is a registered element
-    let newFocused = focused.fallbackElement;
-    while (newFocused && newRegistry.indexOf(newFocused) < 0) {
-        newFocused = newFocused.fallbackElement;
+    const orderedFibers = getOrderedFibers(newRegistry[0].fiber);
+
+    let newFocused =
+        getPrevious(newRegistry, orderedFibers, focused.fiber) ??
+        focused.fallbackElement;
+    while (
+        newFocused &&
+        (!newFocused?.focusable || newRegistry.indexOf(newFocused) === -1)
+    ) {
+        newFocused =
+            getPrevious(newRegistry, orderedFibers, newFocused.fiber) ??
+            newFocused.fallbackElement;
     }
 
-    return [
-        newRegistry,
-        newFocused ??
-            getFirst(newRegistry, getOrderedFibers(newRegistry[0].fiber)),
-    ];
+    return [newRegistry, newFocused ?? getFirst(newRegistry, orderedFibers)];
 }
 
 /**
@@ -207,6 +212,9 @@ export function getMovedFocus(
                 : (getNext(registry, orderedFibers, newFocused.fiber) ??
                   getFirst(registry, orderedFibers) ??
                   newFocused);
+        if (!newFocused.focusable) {
+            i--;
+        }
     }
     return newFocused;
 }
