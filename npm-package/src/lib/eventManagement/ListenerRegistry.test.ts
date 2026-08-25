@@ -41,6 +41,7 @@ function createElement(
         fallbackElement,
         listener: vi.fn(),
         isActive: true,
+        focusable: true,
     };
 }
 
@@ -212,11 +213,12 @@ describe('unregister', () => {
             expect(resultFocused).toBe(one);
         });
 
-        test('falls back to the first entry in tree order', () => {
-            const { a, a1, b } = createTree();
+        test('falls back to the first entry if also getPrevious returns null', () => {
+            const { a, a1 } = createTree();
+            const unmountedFiber = createFiber();
             const one = createElement('one', a);
             const two = createElement('two', a1);
-            const three = createElement('three', b, null);
+            const three = createElement('three', unmountedFiber, null);
             const registry: readonly RegistryElement[] = [one, two, three];
 
             const [, resultFocused] = unregister(registry, three, 'three');
@@ -238,12 +240,13 @@ describe('unregister', () => {
             expect(resultFocused).toBe(one);
         });
 
-        test('falls back to the first entry in tree order', () => {
-            const { a, a1, b } = createTree();
+        test('falls back to the first entry if also getPrevious returns null', () => {
+            const { a, a1 } = createTree();
+            const unmountedFiber = createFiber();
             const unregistered = createElement('unregistered');
             const one = createElement('one', a);
             const two = createElement('two', a1);
-            const three = createElement('three', b, unregistered);
+            const three = createElement('three', unmountedFiber, unregistered);
             const registry: readonly RegistryElement[] = [one, two, three];
 
             const [, resultFocused] = unregister(registry, three, 'three');

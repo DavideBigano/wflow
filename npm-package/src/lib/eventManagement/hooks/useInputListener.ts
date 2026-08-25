@@ -21,6 +21,7 @@ export interface UseInputListenerOptions {
     id?: string;
     /** Automatically focuses this listener if there is no currently focused element. */
     autofocus?: boolean;
+    focusable?: boolean;
 }
 
 /**
@@ -47,6 +48,7 @@ export function useInputListener(
         id = createId(),
         isActive = true,
         name = null,
+        focusable = true,
     } = options;
 
     const fiber = getOwnerFiber();
@@ -58,6 +60,15 @@ export function useInputListener(
         fiber,
         fallbackElement: null,
         isActive,
+        focusable,
+    });
+
+    // kept live every render so the registration effect's cleanup (which
+    // only runs once, on unmount) can read the current focus instead of
+    // whatever was focused on the component's first render.
+    const focusedRef = useRef(focused);
+    useEffect(() => {
+        focusedRef.current = focused;
     });
 
     // updated most of the entrie's data on every render
@@ -71,6 +82,7 @@ export function useInputListener(
         entryRef.current.name = name;
         entryRef.current.isActive = isActive;
         entryRef.current.listener = listener;
+        entryRef.current.focusable = focusable;
     });
 
     // registers a stable entry once
@@ -78,14 +90,14 @@ export function useInputListener(
     useEffect(() => {
         registry.current = register(registry.current, entryRef.current);
 
-        if (autofocus) {
-            setFocused((current) => (current ? current : entryRef.current));
+        if (autofocus && focusable) {
+            setFocused(entryRef.current);
         }
 
         return () => {
             const [newRegistry, newFocused] = unregister(
                 registry.current,
-                focused,
+                focusedRef.current,
                 entryRef.current.id,
             );
             registry.current = newRegistry;

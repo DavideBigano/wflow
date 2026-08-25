@@ -266,7 +266,7 @@ test('isActive: false skips a listener without removing its place in the ancestr
     expect(calls).toEqual(['child', 'toggleable', 'child']);
 });
 
-/* 
+/*
 test('stopPropagation halts propagation', async () => {});
 
 test('unmounting the focused listener falls back to the previous entry', async () => {}); */
