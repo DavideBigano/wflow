@@ -1,32 +1,58 @@
 import { render } from 'ink-testing-library';
 import { describe, expect, test } from 'vitest';
-import type { RegistryElement } from '../../ListenerRegistry.js';
+import type { FiberNode, RegistryElement } from '../../ListenerRegistry.js';
 import { InputEventContext } from '../InputEventProvider/InputEventProvider.js';
 import { InputChainDevtools } from './InputChainDevtools.js';
+
+const shellFiber: FiberNode = {
+    return: null,
+    child: null,
+    sibling: null,
+};
+
+const archiverTopicFiber: FiberNode = {
+    return: null,
+    child: null,
+    sibling: null,
+};
+
+const runDisplayFiber: FiberNode = {
+    return: null,
+    child: null,
+    sibling: null,
+};
+
+shellFiber.child = archiverTopicFiber;
+archiverTopicFiber.return = shellFiber;
+archiverTopicFiber.child = runDisplayFiber;
+runDisplayFiber.return = archiverTopicFiber;
 
 const shell: RegistryElement = {
     id: 'abcde',
     name: 'Shell',
-    fiber: { return: null, child: null, sibling: null },
+    fiber: shellFiber,
     fallbackElement: null,
     listener: () => {},
     isActive: true,
+    focusable: true,
 };
 const archiverTopic: RegistryElement = {
     id: '12345',
     name: 'ArchiverTopic',
-    fiber: { return: null, child: null, sibling: null },
+    fiber: archiverTopicFiber,
     fallbackElement: null,
     listener: () => {},
     isActive: true,
+    focusable: true,
 };
 const runDisplay: RegistryElement = {
     id: '1a1a1',
     name: 'RunDisplay',
-    fiber: { return: null, child: null, sibling: null },
+    fiber: runDisplayFiber,
     fallbackElement: null,
     listener: () => {},
     isActive: true,
+    focusable: true,
 };
 
 function createContext(options?: {

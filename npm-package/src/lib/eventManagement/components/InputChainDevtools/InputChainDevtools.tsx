@@ -1,5 +1,11 @@
 import { Box, Text } from 'ink';
 import { useContext } from 'react';
+import {
+    getLast,
+    getOrderedFibers,
+    getPrevious,
+    type RegistryElement,
+} from '../../ListenerRegistry.js';
 import { InputEventContext } from '../InputEventProvider/InputEventProvider.js';
 
 const TABLE_HEADER = 'Input Listeners';
@@ -18,6 +24,8 @@ export function InputChainDevtools() {
 
     const { registry, focused } = context;
 
+    const orderedRegistry = getOrderedRegistry(registry.current);
+
     return (
         <Box borderStyle="single" flexDirection="column">
             <Box
@@ -33,8 +41,8 @@ export function InputChainDevtools() {
                 </Text>
             </Box>
             <Box flexDirection="column" paddingX={1} width="100%">
-                {registry.current.length === 0 && <Text dimColor>(empty)</Text>}
-                {registry.current.map((entry, index) => {
+                {orderedRegistry.length === 0 && <Text dimColor>(empty)</Text>}
+                {orderedRegistry.map((entry, index) => {
                     const isFocused = entry === focused;
                     return (
                         <Text
@@ -51,4 +59,24 @@ export function InputChainDevtools() {
             </Box>
         </Box>
     );
+}
+
+function getOrderedRegistry(
+    registry: readonly RegistryElement[],
+): RegistryElement[] {
+    if (registry.length === 0) {
+        return [];
+    }
+
+    const orderedFibers = getOrderedFibers(registry[0].fiber);
+
+    const orderedRegistry: RegistryElement[] = [];
+    let current: RegistryElement | null = getLast(registry, orderedFibers);
+
+    while (current) {
+        orderedRegistry.push(current);
+        current = getPrevious(registry, orderedFibers, current.fiber);
+    }
+
+    return orderedRegistry.reverse();
 }
