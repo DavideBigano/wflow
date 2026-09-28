@@ -1,0 +1,462 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "projMap.schema.json",
+    "title": "Project Map",
+    "type": "object",
+    "properties": {
+        "root": {
+            "$ref": "#/$defs/component",
+            "description": "The top level component of the project map."
+        },
+        "decisions": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/decision" },
+            "minItems": 0,
+            "description": "Relevant decision points that shaped choices in the project. Fill in in accordance with the user."
+        }
+    },
+    "required": ["root", "decisions"],
+    "additionalProperties": false,
+    "$defs": {
+        "label": {
+            "type": "string",
+            "maxLength": 30,
+            "description": "For titles and names. ~5 words."
+        },
+        "summary": {
+            "type": "string",
+            "maxLength": 150,
+            "description": "For descriptions and phrases. ~20 words."
+        },
+        "body": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "For longer descriptive prose, ~50 words."
+        },
+        "notes": {
+            "type": "string",
+            "description": "For free form prose and non user-facing annotations."
+        },
+        "functionalRequirementId": {
+            "type": "string",
+            "pattern": "^FR-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "nonFunctionalRequirementId": {
+            "type": "string",
+            "pattern": "^NFR-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "actorId": {
+            "type": "string",
+            "pattern": "^ACT-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "useCaseId": {
+            "type": "string",
+            "pattern": "^UC-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "componentId": {
+            "type": "string",
+            "pattern": "^COM-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "techId": {
+            "type": "string",
+            "pattern": "^TECH-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "interactionId": {
+            "type": "string",
+            "pattern": "^INT-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "decisionId": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$",
+            "description": "Progressive identifier, unique across the document."
+        },
+        "path": {
+            "type": "string",
+            "description": "A file path (relative, absolute, posix or windows) or a URL."
+        },
+        "test": {
+            "type": "object",
+            "description": "Represents a single test file, or a specific test inside a file if the test name is specified.",
+            "properties": {
+                "label": {
+                    "$ref": "#/$defs/label",
+                    "description": "Legible name for the test file."
+                },
+                "description": {
+                    "$ref": "#/$defs/summary",
+                    "description": "Description for the located object."
+                },
+                "notes": { "$ref": "#/$defs/notes" },
+                "type": {
+                    "type": "string",
+                    "description": "The type of test. Allows for 'unit' | 'integration' | 'e2e' | 'screenshot' along with other user defined types."
+                },
+                "location": {
+                    "$ref": "#/$defs/path",
+                    "description": "Location of the test file. Optional, as the test may not be implemented yet."
+                },
+                "testName": {
+                    "type": "string",
+                    "description": "Name for the specific test in the located file. If left empty the object ties to the whole file."
+                }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+        },
+        "referenceMaterial": {
+            "type": "object",
+            "description": "Reference material file or URL that holds additional information.",
+            "properties": {
+                "label": {
+                    "$ref": "#/$defs/label",
+                    "description": "Legible name for the material."
+                },
+                "description": {
+                    "$ref": "#/$defs/summary",
+                    "description": "Description for the material."
+                },
+                "notes": { "$ref": "#/$defs/notes" },
+                "location": { "$ref": "#/$defs/path" }
+            },
+            "required": ["location"],
+            "additionalProperties": false
+        },
+        "functionalRequirement": {
+            "type": "object",
+            "description": "A single functional requirement (what the system must do).",
+            "properties": {
+                "id": { "$ref": "#/$defs/functionalRequirementId" },
+                "label": {
+                    "$ref": "#/$defs/label",
+                    "description": "Legible name for the requirement."
+                },
+                "content": {
+                    "$ref": "#/$defs/summary",
+                    "description": "The requirement statement itself. Phrase as a single, testable capability the system must provide. One capability per entry."
+                },
+                "notes": { "$ref": "#/$defs/notes" },
+                "tests": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/test" },
+                    "minItems": 0,
+                    "description": "The tests that ensure this requirement is respected."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "label", "content"],
+            "additionalProperties": false
+        },
+        "nonFunctionalRequirement": {
+            "type": "object",
+            "description": "A single non-functional requirement (a quality attribute the system must satisfy).",
+            "properties": {
+                "id": { "$ref": "#/$defs/nonFunctionalRequirementId" },
+                "label": {
+                    "$ref": "#/$defs/label",
+                    "description": "Legible name for the requirement."
+                },
+                "content": {
+                    "$ref": "#/$defs/summary",
+                    "description": "The requirement statement itself. Phrase as a measurable quality attribute or constraint, with a concrete threshold or condition where possible. One quality attribute per entry."
+                },
+                "notes": { "$ref": "#/$defs/notes" },
+                "tests": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/test" },
+                    "minItems": 0,
+                    "description": "The tests that ensure this requirement is respected."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "label", "content"],
+            "additionalProperties": false
+        },
+        "actor": {
+            "type": "object",
+            "description": "A single actor: a role that interacts with the system, not a physical person.",
+            "properties": {
+                "id": { "$ref": "#/$defs/actorId" },
+                "name": {
+                    "$ref": "#/$defs/label",
+                    "description": "The role's name."
+                },
+                "roleDescription": {
+                    "$ref": "#/$defs/body",
+                    "description": "High level description of what this role is, what it's responsible for, and what it does that makes it different from other actors."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+        },
+        "useCase": {
+            "type": "object",
+            "description": "A single use case describing an interaction between actors and the system.",
+            "properties": {
+                "id": { "$ref": "#/$defs/useCaseId" },
+                "name": { "$ref": "#/$defs/label" },
+                "notes": { "$ref": "#/$defs/notes" },
+                "actors": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/actorId" },
+                    "minItems": 0,
+                    "description": "Ids of the actors involved in this use case."
+                },
+                "satisfiesRequirements": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/functionalRequirementId" },
+                    "minItems": 0,
+                    "description": "Ids of the functional requirements this use case satisfies."
+                },
+                "prerequisites": {
+                    "$ref": "#/$defs/body",
+                    "description": "Conditions that must hold true before this use case can begin."
+                },
+                "steps": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/body" },
+                    "description": "The main success scenario, as an ordered sequence of steps."
+                },
+                "alternativeSteps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "description": "An alternative flow branching off the main steps.",
+                        "properties": {
+                            "branchesFrom": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "Index (0-based) of the main step this alternative branches from."
+                            },
+                            "name": { "$ref": "#/$defs/label" },
+                            "steps": {
+                                "type": "array",
+                                "items": { "$ref": "#/$defs/body" }
+                            }
+                        },
+                        "required": ["branchesFrom", "steps"],
+                        "additionalProperties": false
+                    },
+                    "minItems": 0
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+        },
+        "interaction": {
+            "type": "object",
+            "description": "A single interaction point between components of the same level.",
+            "properties": {
+                "id": { "$ref": "#/$defs/interactionId" },
+                "fromServiceId": {
+                    "$ref": "#/$defs/componentId",
+                    "description": "References a valid component id."
+                },
+                "toServiceId": {
+                    "$ref": "#/$defs/componentId",
+                    "description": "References a valid component id."
+                },
+                "label": { "$ref": "#/$defs/label" },
+                "description": { "$ref": "#/$defs/summary" },
+                "notes": { "$ref": "#/$defs/notes" },
+                "protocol": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "$ref": "#/$defs/label",
+                            "description": "HTTP(S), SOAP, MQTT, ..."
+                        },
+                        "additionalSpecs": {
+                            "$ref": "#/$defs/notes",
+                            "description": "Additional specification details for the selected protocol (e.g. for HTTP, you may specify method, query params, payload schema, ...)."
+                        }
+                    },
+                    "required": ["name"],
+                    "additionalProperties": false
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "fromServiceId", "toServiceId", "label", "description"],
+            "additionalProperties": false
+        },
+        "diagram": {
+            "type": "object",
+            "properties": {
+                "name": { "$ref": "#/$defs/label" },
+                "description": { "$ref": "#/$defs/summary" },
+                "notes": { "$ref": "#/$defs/notes" },
+                "type": {
+                    "type": "string",
+                    "description": "Type of the diagram (System Context, Use Case, Sequence, Container, ...)."
+                },
+                "location": {
+                    "$ref": "#/$defs/path",
+                    "description": "Location of the diagram: a file path or a URL."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["name", "description", "type", "location"],
+            "additionalProperties": false
+        },
+        "tech": {
+            "type": "object",
+            "properties": {
+                "id": { "$ref": "#/$defs/techId" },
+                "name": { "$ref": "#/$defs/label" },
+                "description": { "$ref": "#/$defs/summary" },
+                "notes": { "$ref": "#/$defs/notes" },
+                "forServices": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/componentId" },
+                    "minItems": 1,
+                    "description": "Ids of the components this tech applies to. May be one or multiple (e.g. Fastify for all services besides web server and DB)."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "name", "description", "forServices"],
+            "additionalProperties": false
+        },
+        "decision": {
+            "type": "object",
+            "description": "A relevant decision point that shaped a choice in the project.",
+            "properties": {
+                "id": { "$ref": "#/$defs/decisionId" },
+                "name": { "$ref": "#/$defs/label" },
+                "body": {
+                    "$ref": "#/$defs/body",
+                    "description": "Describe the choice made and the rationale behind it."
+                },
+                "notes": { "$ref": "#/$defs/notes" },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            { "$ref": "#/$defs/componentId" },
+                            { "$ref": "#/$defs/functionalRequirementId" },
+                            { "$ref": "#/$defs/nonFunctionalRequirementId" },
+                            { "$ref": "#/$defs/actorId" },
+                            { "$ref": "#/$defs/useCaseId" },
+                            { "$ref": "#/$defs/techId" },
+                            { "$ref": "#/$defs/interactionId" },
+                            { "$ref": "#/$defs/decisionId" }
+                        ]
+                    },
+                    "minItems": 0,
+                    "description": "Ids of the elements this decision pertains to, both as causes for and consequences of it (a component, requirement, use case, interaction, actor, tech, or another decision)."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": ["id", "name", "body", "notes", "references"],
+            "additionalProperties": false
+        },
+        "component": {
+            "type": "object",
+            "description": "A system, subsystem, service, library, module, or other structural unit, described at whatever granularity its level implies.",
+            "properties": {
+                "id": { "$ref": "#/$defs/componentId" },
+                "level": {
+                    "$ref": "#/$defs/label",
+                    "description": "Used to contextualize where the component sits in the whole project's schema (Cross-system, system, app, service, library, module, file, function, class, ...). Useful to determine what is the appropriate granularity for the information describing the component. (e.g. the high level requirements for a 'system' component will have different concerns from those for a 'library' or 'module' component, which should be more detailed and geared towards implementation)."
+                },
+                "functionalRequirements": {
+                    "type": "object",
+                    "description": "Functional requirements grouped by category. Use the key \"$uncategorized\" for requirements that don't belong to any category; any other key is a category name (a Label: ~5 words, max 30 chars).",
+                    "patternProperties": {
+                        "^.{1,30}$": {
+                            "type": "array",
+                            "items": { "$ref": "#/$defs/functionalRequirement" },
+                            "minItems": 0
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "nonFunctionalRequirements": {
+                    "type": "object",
+                    "description": "Non-functional requirements grouped by their fixed quality-attribute category.",
+                    "properties": {
+                        "performance": {
+                            "type": "array",
+                            "items": { "$ref": "#/$defs/nonFunctionalRequirement" },
+                            "minItems": 0
+                        },
+                        "security": {
+                            "type": "array",
+                            "items": { "$ref": "#/$defs/nonFunctionalRequirement" },
+                            "minItems": 0
+                        },
+                        "availabilityAndReliability": {
+                            "type": "array",
+                            "items": { "$ref": "#/$defs/nonFunctionalRequirement" },
+                            "minItems": 0
+                        },
+                        "usability": {
+                            "type": "array",
+                            "items": { "$ref": "#/$defs/nonFunctionalRequirement" },
+                            "minItems": 0
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "actors": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/actor" },
+                    "minItems": 0
+                },
+                "useCases": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/useCase" },
+                    "minItems": 0
+                },
+                "archStyle": {
+                    "$ref": "#/$defs/summary",
+                    "description": "Brief description of the architectural style of the system (e.g. monolithic, microservices, serverless, MVC, CLI, ...)."
+                },
+                "location": {
+                    "$ref": "#/$defs/summary",
+                    "description": "Phisical location of the component."
+                },
+                "subcomponents": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/component" },
+                    "minItems": 0,
+                    "description": "The system's subcomponents (e.g. web server, user auth, db, ...). May be left empty."
+                },
+                "interactions": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/interaction" },
+                    "minItems": 0,
+                    "description": "Set of interaction points between subcomponents of the same level."
+                },
+                "techStack": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/tech" },
+                    "minItems": 0,
+                    "description": "Tech stack for the system. Leave empty if there are no subcomponents."
+                },
+                "diagrams": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/diagram" },
+                    "minItems": 0,
+                    "description": "Any number of diagrams that may help to describe the component-subcomponent structure, data flow, user interactions, ..."
+                },
+                "referenceMaterial": { "$ref": "#/$defs/referenceMaterial" }
+            },
+            "required": [
+                "id",
+                "level",
+                "actors",
+                "useCases",
+                "archStyle"
+            ],
+            "additionalProperties": false
+        }
+    }
+}
