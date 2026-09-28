@@ -362,6 +362,9 @@
             "description": "A system, subsystem, service, library, module, or other structural unit, described at whatever granularity its level implies.",
             "properties": {
                 "id": { "$ref": "#/$defs/componentId" },
+                "name": { "$ref": "#/$defs/label" },
+                "description": { "$ref": "#/$defs/summary" },
+                "notes": { "$ref": "#/$defs/notes" },
                 "level": {
                     "$ref": "#/$defs/label",
                     "description": "Used to contextualize where the component sits in the whole project's schema (Cross-system, system, app, service, library, module, file, function, class, ...). Useful to determine what is the appropriate granularity for the information describing the component. (e.g. the high level requirements for a 'system' component will have different concerns from those for a 'library' or 'module' component, which should be more detailed and geared towards implementation)."
@@ -451,6 +454,8 @@
             },
             "required": [
                 "id",
+                "name",
+                "description",
                 "level",
                 "actors",
                 "useCases",
