@@ -1,0 +1,264 @@
+{
+    "root": {
+        "id": "COM-001",
+        "name": "wflow",
+        "description": "Monorepo hosting a CLI tool and a Claude Code plugin for an ICM-inspired workflow.",
+        "level": "system",
+        "archStyle": "Monorepo containing a CLI tool and a Claude Code plugin distributed together.",
+        "actors": [],
+        "useCases": [],
+        "location": "/",
+        "subcomponents": [
+            {
+                "id": "COM-002",
+                "name": "claude-plugin",
+                "description": "The Claude Code plugin distributing wflow's skills.",
+                "notes": "NEEDS TO BE DEFINED FURTHER",
+                "level": "claudePlugin",
+                "archStyle": "Claude Code plugin exposing a set of skills.",
+                "actors": [],
+                "useCases": [],
+                "location": "plugin/"
+            },
+            {
+                "id": "COM-003",
+                "name": "tool",
+                "description": "The wflow terminal-based utility tool.",
+                "level": "app",
+                "archStyle": "Command-line tool with both a traditional command-based interface and a TUI that exposes some functionalities for the wflow system.",
+                "functionalRequirements": {
+                    "$uncategorized": [
+                        {
+                            "id": "FR-001",
+                            "label": "Unified topic exposure",
+                            "content": "Expose wflow's functionality as a set of topics (e.g. Home, Archiver), reachable from both a command-based CLI and an interactive TUI shell.",
+                            "tests": []
+                        },
+                        {
+                            "id": "FR-006",
+                            "label": "Stash & restore",
+                            "content": "Allow stashing the active run into the archive, and restoring a previously archived run back as the active run.",
+                            "tests": []
+                        },
+                        {
+                            "id": "FR-008",
+                            "label": "No silent run loss",
+                            "content": "Restoring a run must never erase an active run; swapping the active run for another is allowed, but no run may be discarded silently.",
+                            "tests": []
+                        },
+                        {
+                            "id": "FR-009",
+                            "label": "Confirm mutating actions",
+                            "content": "Require explicit user confirmation before performing any mutating operation on runs (stash, restore, ...).",
+                            "tests": []
+                        }
+                    ]
+                },
+                "nonFunctionalRequirements": {
+                    "usability": [
+                        {
+                            "id": "NFR-001",
+                            "label": "Actionable errors",
+                            "content": "Report failures with a clear message and a suggested next action (no active run, unknown run id, archive out of sync).",
+                            "tests": []
+                        }
+                    ]
+                },
+                "actors": [],
+                "useCases": [],
+                "location": "npm-package/",
+                "subcomponents": [
+                    {
+                        "id": "COM-004",
+                        "name": "wflow-cli",
+                        "description": "Classic command-based cli side of the tool that exposes the topic",
+                        "level": "app",
+                        "archStyle": "Yargs-powered cli app that exposes the topics.",
+                        "functionalRequirements": {
+                            "$uncategorized": [
+                                {
+                                    "id": "FR-014",
+                                    "label": "TUI launch mode",
+                                    "content": "Simple commands (bare wflow, `home`, `archiver`) launch the TUI on the corresponding tab.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-015",
+                                    "label": "Headless mode",
+                                    "content": "Other subcommands (e.g. under `archiver`) run headlessly instead of opening the TUI (see cli-archiver).",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-018",
+                                    "label": "Shell completion",
+                                    "content": "Provide commands to print and install a shell completion script, skipping install if already present.",
+                                    "tests": []
+                                }
+                            ]
+                        },
+                        "nonFunctionalRequirements": {
+                            "usability": [
+                                {
+                                    "id": "NFR-004",
+                                    "label": "CLI failure reporting",
+                                    "content": "On failure, print a clear message and exit with a non-zero status code.",
+                                    "tests": []
+                                }
+                            ]
+                        },
+                        "actors": [],
+                        "useCases": [],
+                        "subcomponents": [
+                            {
+                                "id": "COM-007",
+                                "name": "cli-archiver",
+                                "description": "CLI-specific implementation of the archiver commands, wrapping the archiver-topic library.",
+                                "level": "module",
+                                "archStyle": "Yargs subcommand handlers over archiver-topic, for headless (non-TUI) usage.",
+                                "functionalRequirements": {
+                                    "$uncategorized": [
+                                        {
+                                            "id": "FR-016",
+                                            "label": "Headless archive command",
+                                            "content": "Provide `archiver archive`, which stashes the active run without opening the TUI.",
+                                            "tests": []
+                                        },
+                                        {
+                                            "id": "FR-017",
+                                            "label": "Headless restore command",
+                                            "content": "Provide `archiver restore <run-id>` to restore a run headlessly, with --auto-archive to stash the active run first (a no-op if none is active).",
+                                            "tests": []
+                                        },
+                                        {
+                                            "id": "FR-021",
+                                            "label": "Archive output format",
+                                            "content": "Print the archived run's id and the list of moved units, or \"(nothing to move)\" if none.",
+                                            "tests": []
+                                        },
+                                        {
+                                            "id": "FR-022",
+                                            "label": "Restore output format",
+                                            "content": "Print the auto-archived run's id first, if any, then the restored run's id.",
+                                            "tests": []
+                                        }
+                                    ]
+                                },
+                                "actors": [],
+                                "useCases": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "COM-005",
+                        "name": "wflow-tui",
+                        "description": "TUI side of the tool.",
+                        "level": "app",
+                        "archStyle": "Ink-based (React) application that exposes the topics with a TUI.",
+                        "functionalRequirements": {
+                            "$uncategorized": [
+                                {
+                                    "id": "FR-002",
+                                    "label": "Topic switching",
+                                    "content": "Left/right arrow keys cycle between registered topic tabs, wrapping around at either end.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-003",
+                                    "label": "Non-TTY fail-fast",
+                                    "content": "Fail fast with a clear error when the TUI is launched outside an interactive terminal (non-TTY stdin).",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-019",
+                                    "label": "Quit shortcut",
+                                    "content": "Pressing Escape or 'q' exits the TUI from anywhere in the shell.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-020",
+                                    "label": "Nested input priority",
+                                    "content": "A topic's own input handling (e.g. a confirm prompt) takes priority over the shell's global tab-switching/quit keys.",
+                                    "tests": []
+                                }
+                            ]
+                        },
+                        "actors": [],
+                        "useCases": []
+                    },
+                    {
+                        "id": "COM-006",
+                        "name": "archiver-topic",
+                        "description": "Functionality that displays active and stashed runs, if present, and allows to both stash and restore specific ones.",
+                        "level": "library",
+                        "archStyle": "Set of functions that perform the necessary readings and movements of run files.",
+                        "functionalRequirements": {
+                            "$uncategorized": [
+                                {
+                                    "id": "FR-004",
+                                    "label": "Detect active run",
+                                    "content": "Determine whether a run is currently active in the workspace, and expose its run id if so.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-005",
+                                    "label": "List archived runs",
+                                    "content": "List the ids of all currently archived (stashed) runs, ordered alphabetically.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-010",
+                                    "label": "Stash implementation",
+                                    "content": "Move the active run's output units and run.json into archive/<run-id>/, emptying the live layers.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-011",
+                                    "label": "Restore implementation",
+                                    "content": "Move an archived run's output units and run.json back into the live layers from archive/<run-id>/.",
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-012",
+                                    "label": "run.json identity",
+                                    "content": "A run is identified by a run.json (validated against run.schema.json) whose run.id names it.",
+                                    "referenceMaterial": {
+                                        "label": "run.schema.json",
+                                        "location": "plugin/skills/wflow-new/references/workspace-template/shared/run.schema.json"
+                                    },
+                                    "tests": []
+                                },
+                                {
+                                    "id": "FR-013",
+                                    "label": "Archive layout",
+                                    "content": "The live run sits under stages/; each archived run sits under archive/<run-id>/, whose folder name must match its run.json's run.id.",
+                                    "tests": []
+                                }
+                            ]
+                        },
+                        "nonFunctionalRequirements": {
+                            "usability": [
+                                {
+                                    "id": "NFR-003",
+                                    "label": "Shared across CLI & TUI",
+                                    "content": "This library must be usable identically from both the CLI (COM-004) and the TUI (COM-005), with no consumer-specific logic embedded in it.",
+                                    "tests": []
+                                }
+                            ],
+                            "availabilityAndReliability": [
+                                {
+                                    "id": "NFR-002",
+                                    "label": "No partial mutations",
+                                    "content": "Mutating operations must not leave the workspace in a partially-moved, inconsistent state if interrupted.",
+                                    "tests": []
+                                }
+                            ]
+                        },
+                        "actors": [],
+                        "useCases": []
+                    }
+                ]
+            }
+        ]
+    },
+    "decisions": []
+}
